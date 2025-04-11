@@ -1,0 +1,37 @@
+{
+    "Linear Regression": {
+        "Training R\u00b2": 0.9269925590580116,
+        "Test R\u00b2": 0.45630135194273147,
+        "Training RMSE": 37892433.127745286,
+        "Test RMSE": 101086135.12050867,
+        "Training MAE": 63089324.355507806,
+        "Test MAE": 62820705.192124434,
+        "Classification Accuracy": 0.5896688741721854
+    },
+    "Random Forest (Cross-validated)": {
+        "Cross-validated R\u00b2": 0.47810848609138984,
+        "Cross-validated R\u00b2 Std": 0.014483904703380674,
+        "Cross-validated RMSE": 100827966.23908141,
+        "Cross-validated MAE": 53422296.86671712,
+        "Cross-validated Accuracy": 0.4903301012027765,
+        "Cross-validated Precision": 0.5507981049385494,
+        "Cross-validated Recall": 0.4903301012027765,
+        "Cross-validated F1 Score": 0.4280164566107394
+    },
+    "Random Forest Regression": {
+        "Training R\u00b2": 0.9269925590580116,
+        "Test R\u00b2": 0.45630135194273147,
+        "Training RMSE": 37892433.127745286,
+        "Test RMSE": 101086135.12050867
+    },
+    "Random Forest Classification": {
+        "Cross-validated Accuracy": 0.5913205515605204,
+        "Cross-validated Accuracy Std": 0.00852497418926488,
+        "Cross-validated Precision": 0.597818801384585,
+        "Cross-validated Precision Std": 0.006992665019037021,
+        "Cross-validated Recall": 0.5913205515605204,
+        "Cross-validated Recall Std": 0.00852497418926488,
+        "Cross-validated F1 Score": 0.5853551147910024,
+        "Cross-validated F1 Score Std": 0.008314549658802607
+    }
+}
