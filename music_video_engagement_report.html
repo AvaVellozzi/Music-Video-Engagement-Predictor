@@ -1,0 +1,261 @@
+
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Music Video Engagement Predictor Report</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                margin: 0;
+                padding: 20px;
+                color: #333;
+                background-color: #f8f9fa;
+            }
+            .container {
+                max-width: 1200px;
+                margin: 0 auto;
+                background-color: white;
+                padding: 20px;
+                box-shadow: 0 0 10px rgba(0,0,0,0.1);
+                border-radius: 5px;
+            }
+            h1, h2, h3 {
+                color: #2c3e50;
+            }
+            .header {
+                text-align: center;
+                margin-bottom: 30px;
+                padding-bottom: 20px;
+                border-bottom: 1px solid #eee;
+            }
+            .visualization {
+                margin: 30px 0;
+                text-align: center;
+            }
+            .visualization img {
+                max-width: 100%;
+                height: auto;
+                border: 1px solid #ddd;
+                border-radius: 4px;
+                box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            }
+            .metrics-table {
+                width: 100%;
+                border-collapse: collapse;
+                margin: 20px 0;
+            }
+            .metrics-table th, .metrics-table td {
+                border: 1px solid #ddd;
+                padding: 12px;
+                text-align: center;
+            }
+            .metrics-table th {
+                background-color: #f2f2f2;
+            }
+            .metrics-table tr:nth-child(even) {
+                background-color: #f9f9f9;
+            }
+            .section {
+                margin: 40px 0;
+            }
+            .footer {
+                text-align: center;
+                margin-top: 50px;
+                padding-top: 20px;
+                color: #777;
+                font-size: 0.9em;
+                border-top: 1px solid #eee;
+            }
+            .highlight {
+                background-color: #e8f4fd;
+                font-weight: bold;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <h1>Music Video Engagement Predictor</h1>
+                <h2>Analysis Report</h2>
+                <p>Generated on 2025-04-11 15:28:29</p>
+            </div>
+            
+            <div class="section">
+                <h2>1. Feature Analysis</h2>
+                <p>This section provides insights into feature correlations and distributions.</p>
+                
+                <div class="visualization">
+                    <h3>Feature Correlation Heatmap</h3>
+                    <img src="results/correlation_heatmap.png" alt="Correlation Heatmap">
+                    <p>This heatmap shows the correlations between different features in the dataset.</p>
+                </div>
+            </div>
+            
+            <div class="section">
+                <h2>2. Principal Component Analysis (PCA)</h2>
+                <p>PCA was used to reduce dimensionality and visualize the data in 2D and 3D space.</p>
+                
+                <div class="visualization">
+                    <h3>2D PCA Visualization</h3>
+                    <img src="results/pca_visualization_views.png" alt="2D PCA Visualization">
+                    <p>This plot shows how the data points are distributed in a 2D principal component space, colored by view count.</p>
+                </div>
+                
+                <div class="visualization">
+                    <h3>3D PCA Visualization</h3>
+                    <img src="results/pca_3d_visualization.png" alt="3D PCA Visualization">
+                    <p>This plot shows the data in a 3D principal component space, providing additional insight into data clustering.</p>
+                </div>
+                
+                <div class="visualization">
+                    <h3>PCA Feature Loadings</h3>
+                    <img src="results/pca_loadings_views.png" alt="PCA Loadings">
+                    <p>This heatmap shows how each original feature contributes to the principal components.</p>
+                </div>
+                
+                <div class="visualization">
+                    <h3>PCA vs Views</h3>
+                    <img src="results/pca_vs_views.png" alt="PCA vs Views">
+                    <p>This plot shows how the principal components correlate with video view counts.</p>
+                </div>
+            </div>
+            
+            <div class="section">
+                <h2>3. Linear Regression Analysis</h2>
+                <p>Linear regression was used as a baseline model for predicting view counts.</p>
+                
+                <div class="visualization">
+                    <h3>Actual vs Predicted Views</h3>
+                    <img src="results/linear_regression_actual_vs_predicted.png" alt="Linear Regression Actual vs Predicted">
+                    <p>This plot compares the actual view counts with the predictions from the linear regression model.</p>
+                </div>
+                
+                <div class="visualization">
+                    <h3>Residuals Plot</h3>
+                    <img src="results/linear_regression_residuals.png" alt="Linear Regression Residuals">
+                    <p>This plot shows the residuals (errors) of the linear regression model against predicted values.</p>
+                </div>
+                
+                <div class="visualization">
+                    <h3>Log-Transformed Actual vs Predicted</h3>
+                    <img src="results/linear_regression_log_transformed.png" alt="Log-Transformed Actual vs Predicted">
+                    <p>This plot compares actual and predicted views on a log scale, which helps visualize the spread of values more clearly.</p>
+                </div>
+            </div>
+            
+            <div class="section">
+                <h2>4. Classification Analysis</h2>
+                <p>The regression problem was also treated as a classification task by binning view counts into categories.</p>
+                
+                <div class="visualization">
+                    <h3>Confusion Matrix</h3>
+                    <img src="results/view_categories_confusion_matrix.png" alt="Confusion Matrix">
+                    <p>This confusion matrix shows how well the model classifies videos into different view count categories.</p>
+                </div>
+                
+                <div class="visualization">
+                    <h3>View Categories Distribution</h3>
+                    <img src="results/view_categories_distribution.png" alt="View Categories Distribution">
+                    <p>This plot shows the distribution of videos across different view count categories.</p>
+                </div>
+            </div>
+            
+            <div class="section">
+                <h2>5. Random Forest Analysis</h2>
+                <p>Random Forest models were used for both regression and classification tasks.</p>
+                
+                <div class="visualization">
+                    <h3>Random Forest Regression R² Scores Across Folds</h3>
+                    <img src="results/rf_regression_r2_scores.png" alt="Random Forest Regression R² Scores">
+                    <p>This plot shows the R² scores for Random Forest regression across each cross-validation fold, with error bars representing standard deviation.</p>
+                </div>
+                
+                <div class="visualization">
+                    <h3>Random Forest Classification Accuracy Scores Across Folds</h3>
+                    <img src="results/rf_classification_accuracy_scores.png" alt="Random Forest Classification Accuracy Scores">
+                    <p>This plot shows the accuracy scores for Random Forest classification across each cross-validation fold, with error bars representing standard deviation.</p>
+                </div>
+                
+                <div class="visualization">
+                    <h3>Random Forest Regression Confusion Matrix</h3>
+                    <img src="results/rf_confusion_matrix.png" alt="Random Forest Confusion Matrix">
+                    <p>This confusion matrix shows the classification performance of the Random Forest regression model when its predictions are converted to categories.</p>
+                </div>
+                
+                <div class="visualization">
+                    <h3>Random Forest Classification Confusion Matrix</h3>
+                    <img src="results/rf_classification_confusion_matrix.png" alt="Random Forest Classification Confusion Matrix">
+                    <p>This confusion matrix shows the performance of the direct Random Forest classification approach, which predicts categories without going through regression first.</p>
+                </div>
+                
+                <div class="visualization">
+                    <h3>Random Forest Regression Feature Importance</h3>
+                    <img src="results/rf_feature_importance.png" alt="Feature Importance">
+                    <p>This plot shows the relative importance of each feature in the Random Forest regression model.</p>
+                </div>
+                
+                <div class="visualization">
+                    <h3>Random Forest Classification Feature Importance</h3>
+                    <img src="results/rf_classification_feature_importance.png" alt="Classification Feature Importance">
+                    <p>This plot shows the relative importance of each feature in the Random Forest classification model, which may differ from the regression model.</p>
+                </div>
+                
+                <div class="visualization">
+                    <h3>Decision Tree Visualization (Classification)</h3>
+                    <img src="results/decision_tree_visualization.png" alt="Decision Tree Visualization">
+                    <p>This visualization shows a single decision tree from the Random Forest classification model (limited to depth=3 for readability). It illustrates how the model makes decisions based on feature values.</p>
+                </div>
+                
+                <div class="visualization">
+                    <h3>Decision Tree Visualization (Regression)</h3>
+                    <img src="results/regression_decision_tree_visualization.png" alt="Regression Decision Tree Visualization">
+                    <p>This visualization shows a single regression decision tree (limited to depth=3 for readability). It demonstrates how the model predicts view counts based on feature values.</p>
+                </div>
+            </div>
+            
+            <div class="section">
+                <h2>6. Model Comparison</h2>
+                <p>This section compares the performance of different models used in this analysis.</p>
+                
+                <h3>Regression Metrics</h3>
+                <table class="metrics-table">
+                    <tr>
+                        <th>Model</th>
+                        <th>Training R²</th>
+                        <th>Test R²</th>
+                        <th>Training RMSE</th>
+                        <th>Test RMSE</th>
+                    </tr>
+    <tr><td>Linear Regression</td><td>0.9270</td><td class='highlight'>0.4563</td><td>37892433.13</td><td>101086135.12</td></tr><tr><td>Random Forest (Cross-validated)</td><td>0.4781 (±0.0145)</td><td class='highlight'>0.4781 (±0.0145)</td><td>100827966.24</td><td>100827966.24</td></tr><tr><td>Random Forest Regression</td><td>0.9270</td><td class='highlight'>0.4563</td><td>37892433.13</td><td>101086135.12</td></tr>
+                </table>
+                
+                <h3>Classification Metrics</h3>
+                <table class="metrics-table">
+                    <tr>
+                        <th>Model</th>
+                        <th>Accuracy</th>
+                        <th>Precision</th>
+                        <th>Recall</th>
+                        <th>F1 Score</th>
+                    </tr>
+    <tr><td>Linear Regression</td><td class='highlight'>0.5897</td><td>N/A</td><td>N/A</td><td>N/A</td></tr><tr><td>Random Forest (Cross-validated)</td><td class='highlight'>0.4903</td><td>0.5508</td><td>0.4903</td><td>0.4280</td></tr><tr><td>Random Forest Classification</td><td class='highlight'>0.5913 (±0.0085)</td><td>0.5978 (±0.0070)</td><td>0.5913 (±0.0085)</td><td>0.5854 (±0.0083)</td></tr>
+                </table>
+            </div>
+            
+            <div class="section">
+                <h2>7. Conclusion</h2>
+                <p>Based on the analysis, Random Forest (Cross-validated) achieved the highest performance for predicting music video engagement metrics with a test R² value of 0.4781, indicating that it can explain approximately 47.8% of the variance in view counts.</p>
+                <p>Feature importance analysis shows that user engagement metrics like Comments, Stream, Duration_ms are the most important predictors of video views. This suggests that videos that generate more user interaction tend to have higher view counts.</p>
+                <p>For classification into view count categories, the Random Forest Classification achieved an accuracy rate of 59.13%, which is a significant improvement over random guessing (which would be 20% for 5 categories).</p>
+            </div>
+            
+            <div class="footer">
+                <p>Music Video Engagement Predictor Project</p>
+                <p>© 2025. All rights reserved.</p>
+            </div>
+        </div>
+    </body>
+    </html>
+    
