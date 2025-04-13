@@ -186,6 +186,8 @@ print(df.columns.tolist())
 print("\n--- 6.5: Feature Correlation Analysis ---")
 
 # Create a correlation matrix for numerical features
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import seaborn as sns
 
@@ -199,6 +201,7 @@ sns.heatmap(corr_matrix, annot=True, cmap='coolwarm', linewidths=0.5, fmt=".2f")
 plt.title('Feature Correlation Heatmap')
 plt.tight_layout()
 plt.savefig(os.path.join(RESULTS_DIR, 'correlation_heatmap.png'))
+plt.close()
 print(f"Correlation heatmap saved to {RESULTS_DIR}/correlation_heatmap.png")
 
 # Display top correlations with the target variable
@@ -289,6 +292,7 @@ plt.xlabel(f'Principal Component 1 ({explained_variance[0]:.1%} variance)')
 plt.ylabel(f'Principal Component 2 ({explained_variance[1]:.1%} variance)')
 plt.grid(alpha=0.3)
 plt.savefig(os.path.join(RESULTS_DIR, 'pca_visualization_views.png'))
+plt.close()
 print(f"PCA visualization saved to {RESULTS_DIR}/pca_visualization_views.png")
 
 # 3D PCA Visualization with 3 components
@@ -339,6 +343,7 @@ ax.grid(True)
 
 # Save the figure
 plt.savefig(os.path.join(RESULTS_DIR, 'pca_3d_visualization.png'))
+plt.close()
 print(f"3D PCA visualization saved to {RESULTS_DIR}/pca_3d_visualization.png")
 
 # Feature importance in PCA
@@ -359,6 +364,7 @@ loadings_plot = sns.heatmap(loadings, cmap='coolwarm', annot=True, fmt=".3f")
 plt.title('PCA Feature Loadings for View Prediction')
 plt.tight_layout()
 plt.savefig(os.path.join(RESULTS_DIR, 'pca_loadings_views.png'))
+plt.close()
 print(f"PCA loadings heatmap saved to {RESULTS_DIR}/pca_loadings_views.png")
 
 # Add a visualization to show how PC1 and PC2 correlate with Views
@@ -381,6 +387,7 @@ if target_views is not None:
     
     plt.tight_layout()
     plt.savefig(os.path.join(RESULTS_DIR, 'pca_vs_views.png'))
+    plt.close()
     print(f"PCA components vs Views visualization saved to {RESULTS_DIR}/pca_vs_views.png")
 
 # ==============================================================================
@@ -474,6 +481,7 @@ plt.ylabel('Predicted Views')
 plt.title('Linear Regression: Actual vs Predicted Views (Test Set)')
 plt.grid(alpha=0.3)
 plt.savefig(os.path.join(RESULTS_DIR, 'linear_regression_actual_vs_predicted.png'))
+plt.close()
 print(f"Linear regression actual vs predicted plot saved to {RESULTS_DIR}/linear_regression_actual_vs_predicted.png")
 
 # Plot residuals
@@ -486,6 +494,7 @@ plt.ylabel('Residuals')
 plt.title('Linear Regression: Residuals Plot')
 plt.grid(alpha=0.3)
 plt.savefig(os.path.join(RESULTS_DIR, 'linear_regression_residuals.png'))
+plt.close()
 print(f"Linear regression residuals plot saved to {RESULTS_DIR}/linear_regression_residuals.png")
 
 # Try a log transformation for better visualization
@@ -497,6 +506,7 @@ plt.ylabel('Log10(Predicted Views)')
 plt.title('Linear Regression: Log-transformed Actual vs Predicted Views')
 plt.grid(alpha=0.3)
 plt.savefig(os.path.join(RESULTS_DIR, 'linear_regression_log_transformed.png'))
+plt.close()
 print(f"Log-transformed actual vs predicted plot saved to {RESULTS_DIR}/linear_regression_log_transformed.png")
 
 print("\n--- Basic Linear Regression Analysis Complete ---")
@@ -563,6 +573,7 @@ plt.ylabel('Actual')
 plt.title('Confusion Matrix of View Count Categories')
 plt.tight_layout()
 plt.savefig(os.path.join(RESULTS_DIR, 'view_categories_confusion_matrix.png'))
+plt.close()
 print(f"Confusion matrix saved to {RESULTS_DIR}/view_categories_confusion_matrix.png")
 
 # Display distribution of view categories in test set
@@ -583,6 +594,7 @@ for bar, count, percentage in zip(bars, category_counts, category_percentages):
 
 plt.tight_layout()
 plt.savefig(os.path.join(RESULTS_DIR, 'view_categories_distribution.png'))
+plt.close()
 print(f"View categories distribution plot saved to {RESULTS_DIR}/view_categories_distribution.png")
 
 print("\n--- Classification Analysis Complete ---")
@@ -652,6 +664,7 @@ plt.grid(axis='y', alpha=0.3)
 plt.legend()
 plt.tight_layout()
 plt.savefig(os.path.join(RESULTS_DIR, 'rf_regression_r2_scores.png'))
+plt.close()
 print(f"R² scores plot saved to {RESULTS_DIR}/rf_regression_r2_scores.png")
 
 # Convert to classification problem by binning
@@ -688,6 +701,7 @@ plt.ylabel('Actual')
 plt.title('Confusion Matrix - Random Forest (Cross-validated)')
 plt.tight_layout()
 plt.savefig(os.path.join(RESULTS_DIR, 'rf_confusion_matrix.png'))
+plt.close()
 print(f"Random Forest confusion matrix saved to {RESULTS_DIR}/rf_confusion_matrix.png")
 
 # Train a final model on the entire dataset (for feature importance)
@@ -709,6 +723,7 @@ sns.barplot(x='Importance', y='Feature', data=feature_importance_rf.head(15))
 plt.title('Random Forest Feature Importance')
 plt.tight_layout()
 plt.savefig(os.path.join(RESULTS_DIR, 'rf_feature_importance.png'))
+plt.close()
 print(f"Feature importance plot saved to {RESULTS_DIR}/rf_feature_importance.png")
 
 # Compare Linear Regression vs Random Forest
@@ -796,6 +811,7 @@ plt.grid(axis='y', alpha=0.3)
 plt.legend()
 plt.tight_layout()
 plt.savefig(os.path.join(RESULTS_DIR, 'rf_classification_accuracy_scores.png'))
+plt.close()
 print(f"Accuracy scores plot saved to {RESULTS_DIR}/rf_classification_accuracy_scores.png")
 
 # Get predictions for confusion matrix
@@ -812,6 +828,7 @@ plt.ylabel('Actual')
 plt.title('Confusion Matrix - RF Classification (Cross-validated)')
 plt.tight_layout()
 plt.savefig(os.path.join(RESULTS_DIR, 'rf_classification_confusion_matrix.png'))
+plt.close()
 print(f"RF Classification confusion matrix saved to {RESULTS_DIR}/rf_classification_confusion_matrix.png")
 
 # Train a final model on all data for feature importance
@@ -831,6 +848,7 @@ sns.barplot(x='Importance', y='Feature', data=feature_importance.head(15))
 plt.title('Random Forest Classification - Feature Importance')
 plt.tight_layout()
 plt.savefig(os.path.join(RESULTS_DIR, 'rf_classification_feature_importance.png'))
+plt.close()
 print(f"Classification feature importance plot saved to {RESULTS_DIR}/rf_classification_feature_importance.png")
 
 # Summary comparison
@@ -915,6 +933,7 @@ plot_tree(dt_classifier,
 plt.title('Decision Tree for View Count Classification (Depth=3)')
 plt.tight_layout()
 plt.savefig(os.path.join(RESULTS_DIR, 'decision_tree_visualization.png'))
+plt.close()
 print(f"Decision tree visualization saved to {RESULTS_DIR}/decision_tree_visualization.png")
 
 # Similarly, create a regression decision tree
@@ -931,4 +950,16 @@ plot_tree(dt_regressor,
 plt.title('Regression Decision Tree for View Count Prediction (Depth=3)')
 plt.tight_layout()
 plt.savefig(os.path.join(RESULTS_DIR, 'regression_decision_tree_visualization.png'))
+plt.close()
 print(f"Regression decision tree visualization saved to {RESULTS_DIR}/regression_decision_tree_visualization.png") 
+
+# Modularize so can use cleaned data in other files
+def load_data():
+    """
+    Returns preprocessed train/test splits and feature names.
+    Can be imported and used in other scripts.
+    """
+    return X_train, X_test, y_train, y_test, X.columns.tolist()
+
+if __name__ == "__main__":
+    X_train, X_test, y_train, y_test, feature_names = load_data()
