@@ -431,83 +431,90 @@ from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error
 import math
 
-# Initialize and train the linear regression model
-print("Training a basic linear regression model...")
+# Train the model
+print("Training linear regression model...")
 lr_model = LinearRegression()
 lr_model.fit(X_train, y_train)
 
-# Make predictions on both training and test sets
+# Predict
 y_train_pred = lr_model.predict(X_train)
 y_test_pred = lr_model.predict(X_test)
 
-# Evaluate model performance
-train_mse = mean_squared_error(y_train, y_train_pred)
-test_mse = mean_squared_error(y_test, y_test_pred)
-train_rmse = math.sqrt(train_mse)
-test_rmse = math.sqrt(test_mse)
-train_mae = mean_absolute_error(y_train, y_train_pred)
-test_mae = mean_absolute_error(y_test, y_test_pred)
-train_r2 = r2_score(y_train, y_train_pred)
-test_r2 = r2_score(y_test, y_test_pred)
+# Evaluate
+metrics = {
+    'Train MSE': mean_squared_error(y_train, y_train_pred),
+    'Test MSE': mean_squared_error(y_test, y_test_pred),
+    'Train MAE': mean_absolute_error(y_train, y_train_pred),
+    'Test MAE': mean_absolute_error(y_test, y_test_pred),
+    'Train R²': r2_score(y_train, y_train_pred),
+    'Test R²': r2_score(y_test, y_test_pred)
+}
+metrics['Train RMSE'] = math.sqrt(metrics['Train MSE'])
+metrics['Test RMSE'] = math.sqrt(metrics['Test MSE'])
 
-# Print evaluation metrics
+train_r2 = metrics['Train R²']
+test_r2 = metrics['Test R²']
+train_rmse = metrics['Train RMSE']
+test_rmse = metrics['Test RMSE']
+train_mae = metrics['Train MAE']
+test_mae = metrics['Test MAE']
+
+# Print metrics
 print("\nLinear Regression Model Performance:")
-print(f"Training set MSE: {train_mse:.2f}")
-print(f"Test set MSE: {test_mse:.2f}")
-print(f"Training set RMSE: {train_rmse:.2f}")
-print(f"Test set RMSE: {test_rmse:.2f}")
-print(f"Training set MAE: {train_mae:.2f}")
-print(f"Test set MAE: {test_mae:.2f}")
-print(f"Training set R²: {train_r2:.4f}")
-print(f"Test set R²: {test_r2:.4f}")
+for k, v in metrics.items():
+    print(f"{k}: {v:,.4f}" if 'R²' in k else f"{k}: {v:,.2f}")
 
-# Check for feature importance (coefficients)
+# Feature importance (coefficients)
 feature_importance = pd.DataFrame({
     'Feature': X_train.columns,
     'Coefficient': lr_model.coef_
 })
-feature_importance['Abs_Coefficient'] = abs(feature_importance['Coefficient'])
+feature_importance['Abs_Coefficient'] = feature_importance['Coefficient'].abs()
 feature_importance = feature_importance.sort_values('Abs_Coefficient', ascending=False)
 
-print("\nTop 10 most important features in linear regression model:")
+print("\nTop 10 most important features:")
 print(feature_importance.head(10))
 
-# Plot actual vs predicted values on test set
-plt.figure(figsize=(10, 8))
-plt.scatter(y_test, y_test_pred, alpha=0.5)
-plt.plot([y_test.min(), y_test.max()], [y_test.min(), y_test.max()], 'r--')
-plt.xlabel('Actual Views')
-plt.ylabel('Predicted Views')
-plt.title('Linear Regression: Actual vs Predicted Views (Test Set)')
-plt.grid(alpha=0.3)
-plt.savefig(os.path.join(RESULTS_DIR, 'linear_regression_actual_vs_predicted.png'))
-plt.close()
-print(f"Linear regression actual vs predicted plot saved to {RESULTS_DIR}/linear_regression_actual_vs_predicted.png")
+# === Visualizations ===
+def save_plot(fig_name, plot_fn):
+    plt.figure(figsize=(10, 8))
+    plot_fn()
+    plt.grid(alpha=0.3)
+    plt.tight_layout()
+    file_path = os.path.join(RESULTS_DIR, fig_name)
+    plt.savefig(file_path)
+    plt.close()
+    print(f"Saved: {file_path}")
 
-# Plot residuals
-plt.figure(figsize=(10, 8))
-residuals = y_test - y_test_pred
-plt.scatter(y_test_pred, residuals, alpha=0.5)
-plt.axhline(y=0, color='r', linestyle='-')
-plt.xlabel('Predicted Views')
-plt.ylabel('Residuals')
-plt.title('Linear Regression: Residuals Plot')
-plt.grid(alpha=0.3)
-plt.savefig(os.path.join(RESULTS_DIR, 'linear_regression_residuals.png'))
-plt.close()
-print(f"Linear regression residuals plot saved to {RESULTS_DIR}/linear_regression_residuals.png")
+# Plot: Actual vs Predicted
+save_plot('linear_regression_actual_vs_predicted.png', lambda: (
+    plt.scatter(y_test, y_test_pred, alpha=0.5),
+    plt.plot([y_test.min(), y_test.max()], [y_test.min(), y_test.max()], 'r--'),
+    plt.xlabel('Actual Views'),
+    plt.ylabel('Predicted Views'),
+    plt.title('Linear Regression: Actual vs Predicted')
+))
 
-# Try a log transformation for better visualization
-plt.figure(figsize=(10, 8))
-plt.scatter(np.log10(y_test + 1), np.log10(y_test_pred + 1), alpha=0.5)
-plt.plot([0, np.log10(y_test.max() + 1)], [0, np.log10(y_test.max() + 1)], 'r--')
-plt.xlabel('Log10(Actual Views)')
-plt.ylabel('Log10(Predicted Views)')
-plt.title('Linear Regression: Log-transformed Actual vs Predicted Views')
-plt.grid(alpha=0.3)
-plt.savefig(os.path.join(RESULTS_DIR, 'linear_regression_log_transformed.png'))
-plt.close()
-print(f"Log-transformed actual vs predicted plot saved to {RESULTS_DIR}/linear_regression_log_transformed.png")
+# Plot: Residuals
+save_plot('linear_regression_residuals.png', lambda: (
+    plt.scatter(y_test_pred, y_test - y_test_pred, alpha=0.5),
+    plt.axhline(0, color='r', linestyle='--'),
+    plt.xlabel('Predicted Views'),
+    plt.ylabel('Residuals'),
+    plt.title('Linear Regression: Residuals')
+))
+
+# Plot: Log-Transformed Actual vs Predicted
+# Prevent log10 of negative
+y_test_pred_clipped = np.maximum(y_test_pred, 0)
+
+save_plot('linear_regression_log_transformed.png', lambda: (
+    plt.scatter(np.log10(y_test + 1), np.log10(y_test_pred_clipped + 1), alpha=0.5),
+    plt.plot([0, np.log10(y_test.max() + 1)], [0, np.log10(y_test.max() + 1)], 'r--'),
+    plt.xlabel('Log10(Actual Views)'),
+    plt.ylabel('Log10(Predicted Views)'),
+    plt.title('Linear Regression: Log-Transformed Actual vs Predicted')
+))
 
 print("\n--- Basic Linear Regression Analysis Complete ---")
 
