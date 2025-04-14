@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
 
-# Import the modularized preprocessing
+# Import preprocessing file
 from preprocessing import load_data
 
 # Create folder for visualizations
