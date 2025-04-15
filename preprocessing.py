@@ -11,6 +11,10 @@ import numpy as np
 import os
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 from sklearn.tree import DecisionTreeRegressor, plot_tree, DecisionTreeClassifier
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
+from imblearn.over_sampling import SMOTE
+from imblearn.pipeline import Pipeline as ImbPipeline
 
 # ==============================================================================
 # Create results directory if it doesn't exist
@@ -245,14 +249,14 @@ else:
     # If we don't have Views in our dataframe at this point, something went wrong
     target_views = None
 
-# Standardize the features (important for PCA)
-scaler = StandardScaler()
-scaled_features = scaler.fit_transform(numeric_features)
-print(f"Features standardized, shape: {scaled_features.shape}")
+# --- Scale features locally ONLY for PCA visualization ---
+scaler_pca = StandardScaler()
+scaled_features_pca = scaler_pca.fit_transform(numeric_features)
+print(f"Features standardized locally for PCA, shape: {scaled_features_pca.shape}")
 
 # Apply PCA with 2 components for visualization
 pca = PCA(n_components=2)
-pca_result = pca.fit_transform(scaled_features)
+pca_result = pca.fit_transform(scaled_features_pca) # Use locally scaled features
 print(f"PCA applied, reduced to {pca_result.shape[1]} dimensions")
 
 # Create a DataFrame for the PCA results
@@ -295,7 +299,7 @@ print(f"PCA visualization saved to {RESULTS_DIR}/pca_visualization_views.png")
 print("\n--- Creating 3D PCA Visualization ---")
 # Rerun PCA with 3 components
 pca_3d = PCA(n_components=3)
-pca_result_3d = pca_3d.fit_transform(scaled_features)
+pca_result_3d = pca_3d.fit_transform(scaled_features_pca) # Use locally scaled features
 explained_variance_3d = pca_3d.explained_variance_ratio_
 print(f"PCA 3D applied, reduced to 3 dimensions")
 print(f"Explained variance ratio: PC1={explained_variance_3d[0]:.4f}, PC2={explained_variance_3d[1]:.4f}, PC3={explained_variance_3d[2]:.4f}")
@@ -598,34 +602,32 @@ from sklearn.model_selection import cross_val_score, KFold, cross_val_predict
 from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, classification_report
 
-# Initialize the Random Forest regressor with reasonable parameters
-print("Initializing Random Forest regressor...")
-rf_model = RandomForestRegressor(
-    n_estimators=100,  # Number of trees
-    max_depth=None,    # Maximum depth of trees (None = unlimited)
-    min_samples_split=2,
-    min_samples_leaf=1,
-    random_state=RANDOM_STATE,
-    n_jobs=-1  # Use all available cores
-)
+# Initialize the Random Forest regressor pipeline
+print("Initializing Random Forest regressor pipeline with StandardScaler...")
+rf_pipeline_reg = Pipeline([
+    ('scaler', StandardScaler()),  # Add scaler step
+    ('regressor', RandomForestRegressor(
+        n_estimators=100,  # Number of trees
+        max_depth=None,    # Maximum depth of trees (None = unlimited)
+        min_samples_split=2,
+        min_samples_leaf=1,
+        random_state=RANDOM_STATE,
+        n_jobs=-1  # Use all available cores
+    ))
+])
 
 # Set up k-fold cross-validation
 k_folds = 5
 kf = KFold(n_splits=k_folds, shuffle=True, random_state=RANDOM_STATE)
 print(f"Performing {k_folds}-fold cross-validation...")
 
-# Regression metrics storage
-cv_r2_scores = []
-cv_rmse_scores = []
-cv_mae_scores = []
-
 # Run k-fold cross-validation for regression metrics
 print("\nCross-validation for regression metrics in progress...")
-# Get predictions from cross-validation
-y_pred_cv = cross_val_predict(rf_model, X, y, cv=kf)
+# Get predictions from cross-validation using the pipeline
+y_pred_cv = cross_val_predict(rf_pipeline_reg, X, y, cv=kf)
 
-# Calculate R² scores for each fold to get std deviation
-cv_r2_scores = cross_val_score(rf_model, X, y, cv=kf, scoring='r2')
+# Calculate R² scores for each fold using the pipeline
+cv_r2_scores = cross_val_score(rf_pipeline_reg, X, y, cv=kf, scoring='r2')
 r2_cv = cv_r2_scores.mean()
 r2_cv_std = cv_r2_scores.std()
 
@@ -645,7 +647,7 @@ plt.bar(range(1, k_folds + 1), cv_r2_scores, yerr=r2_cv_std, capsize=10, color='
 plt.axhline(y=r2_cv, color='red', linestyle='--', label=f'Mean R² = {r2_cv:.4f}')
 plt.xlabel('Cross-validation Fold')
 plt.ylabel('R² Score')
-plt.title('Random Forest Regression R² Scores (5-fold CV)')
+plt.title('Random Forest Regression R² Scores (5-fold CV with Scaling)')
 plt.ylim(max(0, min(cv_r2_scores) - 0.1), min(1.0, max(cv_r2_scores) + 0.1))
 plt.xticks(range(1, k_folds + 1))
 plt.grid(axis='y', alpha=0.3)
@@ -666,38 +668,38 @@ recall_cv = recall_score(y_true_binned, y_pred_binned_cv, average='weighted')
 f1_cv = f1_score(y_true_binned, y_pred_binned_cv, average='weighted')
 
 # Print classification metrics
-print("\nRandom Forest Classification Performance (Cross-validated):")
+print("\nRandom Forest Classification Performance (Based on Regression Predictions):")
 print(f"Cross-validated Accuracy: {accuracy_cv:.4f}")
 print(f"Cross-validated Precision: {precision_cv:.4f}")
 print(f"Cross-validated Recall: {recall_cv:.4f}")
 print(f"Cross-validated F1 Score: {f1_cv:.4f}")
 
 # Detailed classification report
-print("\nDetailed Classification Report for Random Forest:")
+print("\nDetailed Classification Report for Binned Regression Predictions:")
 target_names = ['<1M views', '1M-10M views', '10M-100M views', '100M-1B views']
 print(classification_report(y_true_binned, y_pred_binned_cv, target_names=target_names))
 
 # Create confusion matrix for Random Forest
 cm_rf = confusion_matrix(y_true_binned, y_pred_binned_cv)
 plt.figure(figsize=(10, 8))
-sns.heatmap(cm_rf, annot=True, fmt='d', cmap='Blues', 
-            xticklabels=target_names, 
+sns.heatmap(cm_rf, annot=True, fmt='d', cmap='Blues',
+            xticklabels=target_names,
             yticklabels=target_names)
 plt.xlabel('Predicted')
 plt.ylabel('Actual')
-plt.title('Confusion Matrix - Random Forest (Cross-validated)')
+plt.title('Confusion Matrix - Binned Regression Predictions (Cross-validated)')
 plt.tight_layout()
-plt.savefig(os.path.join(RESULTS_DIR, 'rf_confusion_matrix.png'))
-print(f"Random Forest confusion matrix saved to {RESULTS_DIR}/rf_confusion_matrix.png")
+plt.savefig(os.path.join(RESULTS_DIR, 'rf_binned_regression_confusion_matrix.png'))
+print(f"Binned Regression confusion matrix saved to {RESULTS_DIR}/rf_binned_regression_confusion_matrix.png")
 
-# Train a final model on the entire dataset (for feature importance)
-print("\nTraining final Random Forest model on entire dataset for feature importance...")
-rf_model.fit(X, y)
+# Train final pipeline on entire dataset for feature importance
+print("\nTraining final Random Forest pipeline on entire dataset for feature importance...")
+rf_pipeline_reg.fit(X, y)
 
-# Get feature importances
+# Get feature importances from the regressor step in the pipeline
 feature_importance_rf = pd.DataFrame({
     'Feature': X.columns,
-    'Importance': rf_model.feature_importances_
+    'Importance': rf_pipeline_reg.named_steps['regressor'].feature_importances_
 }).sort_values(by='Importance', ascending=False)
 
 print("\nTop 10 most important features in Random Forest model:")
@@ -706,65 +708,49 @@ print(feature_importance_rf.head(10))
 # Visualize Random Forest feature importance
 plt.figure(figsize=(12, 8))
 sns.barplot(x='Importance', y='Feature', data=feature_importance_rf.head(15))
-plt.title('Random Forest Feature Importance')
+plt.title('Random Forest Regression Feature Importance (Scaled)')
 plt.tight_layout()
-plt.savefig(os.path.join(RESULTS_DIR, 'rf_feature_importance.png'))
-print(f"Feature importance plot saved to {RESULTS_DIR}/rf_feature_importance.png")
+plt.savefig(os.path.join(RESULTS_DIR, 'rf_regression_feature_importance.png'))
+print(f"Feature importance plot saved to {RESULTS_DIR}/rf_regression_feature_importance.png")
 
 # Compare Linear Regression vs Random Forest
 print("\n--- Model Comparison: Linear Regression vs Random Forest ---")
 print("Regression Metrics (R²):")
 print(f"Linear Regression (Test set): {test_r2:.4f}")
 print(f"Random Forest (Cross-validated): {r2_cv:.4f}")
-print("\nClassification Accuracy:")
-print(f"Linear Regression: {accuracy:.4f}")
+print("\nClassification Accuracy (Based on Regression Predictions):")
+print(f"Linear Regression: {accuracy_cv:.4f}")
 print(f"Random Forest: {accuracy_cv:.4f}")
 
-print("\n--- Random Forest Analysis Complete ---")
-
-# ==============================================================================
-# Section 13: Random Forest Regression Model
-# ==============================================================================
-print("\n--- Random Forest Regression Model ---")
-rf_regressor = RandomForestRegressor(n_estimators=100, random_state=RANDOM_STATE)
-rf_regressor.fit(X_train, y_train)
-
-# Predictions and evaluation for regression
-y_train_pred = rf_regressor.predict(X_train)
-y_test_pred = rf_regressor.predict(X_test)
-
-# Calculate regression metrics
-train_rmse = np.sqrt(mean_squared_error(y_train, y_train_pred))
-test_rmse = np.sqrt(mean_squared_error(y_test, y_test_pred))
-train_r2 = r2_score(y_train, y_train_pred)
-test_r2 = r2_score(y_test, y_test_pred)
-
-# Print regression metrics
-print("\nRandom Forest Regression Performance:")
-print(f"Training RMSE: {train_rmse:.2f}")
-print(f"Test RMSE: {test_rmse:.2f}")
-print(f"Training R²: {train_r2:.4f}")
-print(f"Test R²: {test_r2:.4f}")
+print("\n--- Random Forest Regression Analysis Complete ---")
 
 # ==============================================================================
 # Section 14: Random Forest Classification Model with Cross-Validation
 # ==============================================================================
-print("\n--- Random Forest Classification Model with Cross-Validation ---")
+print("\n--- 14: Random Forest Classification Model with Cross-Validation ---")
 
-# Create classifier
-rf_classifier = RandomForestClassifier(n_estimators=100, random_state=RANDOM_STATE, n_jobs=-1)
+# Create classification pipeline
+print("Initializing Random Forest classifier pipeline with StandardScaler...")
+rf_pipeline_clf = Pipeline([
+    ('scaler', StandardScaler()),
+    ('classifier', RandomForestClassifier(
+        n_estimators=100,
+        random_state=RANDOM_STATE,
+        n_jobs=-1
+    ))
+])
 
 # Prepare the binned target
 y_binned = np.array([categorize_views(v) for v in y])
 
-# Perform cross-validation for classification (k=5 folds)
-print(f"Performing {k_folds}-fold cross-validation...")
+# Use the same KFold setup as before
+print(f"Performing {k_folds}-fold cross-validation for classification...")
 
-# Get accuracy, precision, recall, and F1 scores with cross-validation
-cv_accuracy_scores = cross_val_score(rf_classifier, X, y_binned, cv=kf, scoring='accuracy')
-cv_precision_scores = cross_val_score(rf_classifier, X, y_binned, cv=kf, scoring='precision_weighted')
-cv_recall_scores = cross_val_score(rf_classifier, X, y_binned, cv=kf, scoring='recall_weighted')
-cv_f1_scores = cross_val_score(rf_classifier, X, y_binned, cv=kf, scoring='f1_weighted')
+# Get accuracy, precision, recall, and F1 scores with cross-validation using the pipeline
+cv_accuracy_scores = cross_val_score(rf_pipeline_clf, X, y_binned, cv=kf, scoring='accuracy')
+cv_precision_scores = cross_val_score(rf_pipeline_clf, X, y_binned, cv=kf, scoring='precision_weighted')
+cv_recall_scores = cross_val_score(rf_pipeline_clf, X, y_binned, cv=kf, scoring='recall_weighted')
+cv_f1_scores = cross_val_score(rf_pipeline_clf, X, y_binned, cv=kf, scoring='f1_weighted')
 
 # Calculate means and standard deviations
 accuracy_mean = cv_accuracy_scores.mean()
@@ -777,7 +763,7 @@ f1_mean = cv_f1_scores.mean()
 f1_std = cv_f1_scores.std()
 
 # Print classification metrics with standard deviations
-print("\nRandom Forest Classification Performance (Cross-validated):")
+print("\nRandom Forest Classification Performance (Cross-validated with Scaling):")
 print(f"Accuracy: {accuracy_mean:.4f} (±{accuracy_std:.4f})")
 print(f"Precision: {precision_mean:.4f} (±{precision_std:.4f})")
 print(f"Recall: {recall_mean:.4f} (±{recall_std:.4f})")
@@ -789,7 +775,7 @@ plt.bar(range(1, k_folds + 1), cv_accuracy_scores, yerr=accuracy_std, capsize=10
 plt.axhline(y=accuracy_mean, color='red', linestyle='--', label=f'Mean Accuracy = {accuracy_mean:.4f}')
 plt.xlabel('Cross-validation Fold')
 plt.ylabel('Accuracy')
-plt.title('Random Forest Classification Accuracy Scores (5-fold CV)')
+plt.title('Random Forest Classification Accuracy Scores (5-fold CV with Scaling)')
 plt.ylim(max(0, min(cv_accuracy_scores) - 0.1), min(1.0, max(cv_accuracy_scores) + 0.1))
 plt.xticks(range(1, k_folds + 1))
 plt.grid(axis='y', alpha=0.3)
@@ -798,82 +784,239 @@ plt.tight_layout()
 plt.savefig(os.path.join(RESULTS_DIR, 'rf_classification_accuracy_scores.png'))
 print(f"Accuracy scores plot saved to {RESULTS_DIR}/rf_classification_accuracy_scores.png")
 
-# Get predictions for confusion matrix
-y_pred_cv = cross_val_predict(rf_classifier, X, y_binned, cv=kf)
+# Get predictions for confusion matrix using the pipeline
+y_pred_cv_clf = cross_val_predict(rf_pipeline_clf, X, y_binned, cv=kf)
 
 # Create confusion matrix
-cm = confusion_matrix(y_binned, y_pred_cv)
+cm_clf = confusion_matrix(y_binned, y_pred_cv_clf)
 plt.figure(figsize=(10, 8))
-sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', 
-            xticklabels=target_names, 
+sns.heatmap(cm_clf, annot=True, fmt='d', cmap='Blues',
+            xticklabels=target_names,
             yticklabels=target_names)
 plt.xlabel('Predicted')
 plt.ylabel('Actual')
-plt.title('Confusion Matrix - RF Classification (Cross-validated)')
+plt.title('Confusion Matrix - RF Classification (Cross-validated with Scaling)')
 plt.tight_layout()
 plt.savefig(os.path.join(RESULTS_DIR, 'rf_classification_confusion_matrix.png'))
 print(f"RF Classification confusion matrix saved to {RESULTS_DIR}/rf_classification_confusion_matrix.png")
 
-# Train a final model on all data for feature importance
-rf_classifier.fit(X, y_binned)
+# Train final classification pipeline on all data for feature importance
+print("\nTraining final classification pipeline on entire dataset...")
+rf_pipeline_clf.fit(X, y_binned)
 
-# Get and visualize feature importance
-feature_importance = pd.DataFrame({
+# Get and visualize feature importance from the classifier step
+feature_importance_clf = pd.DataFrame({
     'Feature': X.columns,
-    'Importance': rf_classifier.feature_importances_
+    'Importance': rf_pipeline_clf.named_steps['classifier'].feature_importances_
 }).sort_values('Importance', ascending=False)
 
 print("\nTop 10 most important features for classification:")
-print(feature_importance.head(10))
+print(feature_importance_clf.head(10))
 
 plt.figure(figsize=(12, 8))
-sns.barplot(x='Importance', y='Feature', data=feature_importance.head(15))
-plt.title('Random Forest Classification - Feature Importance')
+sns.barplot(x='Importance', y='Feature', data=feature_importance_clf.head(15))
+plt.title('Random Forest Classification - Feature Importance (Scaled)')
 plt.tight_layout()
 plt.savefig(os.path.join(RESULTS_DIR, 'rf_classification_feature_importance.png'))
 print(f"Classification feature importance plot saved to {RESULTS_DIR}/rf_classification_feature_importance.png")
 
-# Summary comparison
-print("\n--- Model Comparison ---")
-print("Classification Metrics:")
-print(f"Random Forest Regression (converted to classification): {accuracy_cv:.4f}")
-print(f"Random Forest Classification (direct): {accuracy_mean:.4f} (±{accuracy_std:.4f})")
+# Summary comparison - Now comparing Regression CV vs Classification CV
+print("\n--- Model Evaluation Summary ---")
+print("Cross-validated Regression Metrics:")
+print(f"  R²: {r2_cv:.4f} (±{r2_cv_std:.4f})")
+print(f"  RMSE: {rmse_cv:.2f}")
+print(f"  MAE: {mae_cv:.2f}")
+print("\nCross-validated Classification Metrics:")
+print(f"  Accuracy: {accuracy_mean:.4f} (±{accuracy_std:.4f})")
+print(f"  Precision: {precision_mean:.4f} (±{precision_std:.4f})")
+print(f"  Recall: {recall_mean:.4f} (±{recall_std:.4f})")
+print(f"  F1 Score: {f1_mean:.4f} (±{f1_std:.4f})")
 
 # ==============================================================================
-# Section 15: Save Metrics for Reporting
+# Section 15: Decision Tree Models with Cross-Validation
 # ==============================================================================
-print("\n--- Saving Metrics for Reporting ---")
+print("\n--- 15: Decision Tree Models with 5-Fold Cross Validation ---")
+
+# --- Decision Tree Regressor ---
+print("\nInitializing Decision Tree regressor pipeline...")
+dt_pipeline_reg = Pipeline([
+    ('scaler', StandardScaler()),
+    ('regressor', DecisionTreeRegressor(random_state=RANDOM_STATE))
+])
+
+print("Performing cross-validation for Decision Tree Regressor...")
+# Get predictions
+y_pred_cv_dt_reg = cross_val_predict(dt_pipeline_reg, X, y, cv=kf)
+
+# Get R² scores
+cv_r2_scores_dt = cross_val_score(dt_pipeline_reg, X, y, cv=kf, scoring='r2')
+r2_cv_dt = cv_r2_scores_dt.mean()
+r2_cv_dt_std = cv_r2_scores_dt.std()
+
+# Calculate other metrics
+rmse_cv_dt = np.sqrt(mean_squared_error(y, y_pred_cv_dt_reg))
+mae_cv_dt = mean_absolute_error(y, y_pred_cv_dt_reg)
+
+print("\nDecision Tree Regression Performance (Cross-validated):")
+print(f"Cross-validated RMSE: {rmse_cv_dt:.2f}")
+print(f"Cross-validated MAE: {mae_cv_dt:.2f}")
+print(f"Cross-validated R²: {r2_cv_dt:.4f} (±{r2_cv_dt_std:.4f})")
+
+# --- Decision Tree Classifier ---
+print("\nInitializing Decision Tree classifier pipeline...")
+dt_pipeline_clf = Pipeline([
+    ('scaler', StandardScaler()),
+    ('classifier', DecisionTreeClassifier(random_state=RANDOM_STATE))
+])
+
+print("Performing cross-validation for Decision Tree Classifier...")
+# Get predictions
+y_pred_cv_dt_clf = cross_val_predict(dt_pipeline_clf, X, y_binned, cv=kf)
+
+# Get scores
+cv_accuracy_scores_dt = cross_val_score(dt_pipeline_clf, X, y_binned, cv=kf, scoring='accuracy')
+cv_precision_scores_dt = cross_val_score(dt_pipeline_clf, X, y_binned, cv=kf, scoring='precision_weighted')
+cv_recall_scores_dt = cross_val_score(dt_pipeline_clf, X, y_binned, cv=kf, scoring='recall_weighted')
+cv_f1_scores_dt = cross_val_score(dt_pipeline_clf, X, y_binned, cv=kf, scoring='f1_weighted')
+
+# Calculate means and standard deviations
+accuracy_mean_dt = cv_accuracy_scores_dt.mean()
+accuracy_std_dt = cv_accuracy_scores_dt.std()
+precision_mean_dt = cv_precision_scores_dt.mean()
+precision_std_dt = cv_precision_scores_dt.std()
+recall_mean_dt = cv_recall_scores_dt.mean()
+recall_std_dt = cv_recall_scores_dt.std()
+f1_mean_dt = cv_f1_scores_dt.mean()
+f1_std_dt = cv_f1_scores_dt.std()
+
+print("\nDecision Tree Classification Performance (Cross-validated):")
+print(f"Accuracy: {accuracy_mean_dt:.4f} (±{accuracy_std_dt:.4f})")
+print(f"Precision: {precision_mean_dt:.4f} (±{precision_std_dt:.4f})")
+print(f"Recall: {recall_mean_dt:.4f} (±{recall_std_dt:.4f})")
+print(f"F1 Score: {f1_mean_dt:.4f} (±{f1_std_dt:.4f})")
+
+print("\nDetailed Classification Report for Decision Tree:")
+print(classification_report(y_binned, y_pred_cv_dt_clf, target_names=target_names))
+
+# Create confusion matrix for Decision Tree Classifier
+cm_dt = confusion_matrix(y_binned, y_pred_cv_dt_clf)
+plt.figure(figsize=(10, 8))
+sns.heatmap(cm_dt, annot=True, fmt='d', cmap='Blues', 
+            xticklabels=target_names, 
+            yticklabels=target_names)
+plt.xlabel('Predicted')
+plt.ylabel('Actual')
+plt.title('Confusion Matrix - Decision Tree Classification (Cross-validated)')
+plt.tight_layout()
+plt.savefig(os.path.join(RESULTS_DIR, 'dt_classification_confusion_matrix.png'))
+print(f"Decision Tree Classification confusion matrix saved to {RESULTS_DIR}/dt_classification_confusion_matrix.png")
+
+print("\n--- Decision Tree Analysis Complete ---")
+
+# ==============================================================================
+# Section 16: Evaluate Classifiers with SMOTE Resampling
+# ==============================================================================
+print("\n--- 16: Evaluating Classifiers with SMOTE Oversampling --- ")
+
+# --- Random Forest Classifier with SMOTE ---
+print("\nInitializing Random Forest classifier pipeline with SMOTE...")
+rf_pipeline_clf_smote = ImbPipeline([
+    ('scaler', StandardScaler()),
+    ('smote', SMOTE(random_state=RANDOM_STATE)),
+    ('classifier', RandomForestClassifier(
+        n_estimators=100,
+        random_state=RANDOM_STATE,
+        n_jobs=-1
+    ))
+])
+
+print("Performing cross-validation for RF Classifier with SMOTE...")
+# Get scores
+cv_accuracy_scores_rf_smote = cross_val_score(rf_pipeline_clf_smote, X, y_binned, cv=kf, scoring='accuracy')
+cv_precision_scores_rf_smote = cross_val_score(rf_pipeline_clf_smote, X, y_binned, cv=kf, scoring='precision_weighted')
+cv_recall_scores_rf_smote = cross_val_score(rf_pipeline_clf_smote, X, y_binned, cv=kf, scoring='recall_weighted')
+cv_f1_scores_rf_smote = cross_val_score(rf_pipeline_clf_smote, X, y_binned, cv=kf, scoring='f1_weighted')
+
+# Calculate means and standard deviations
+accuracy_mean_rf_smote = cv_accuracy_scores_rf_smote.mean()
+accuracy_std_rf_smote = cv_accuracy_scores_rf_smote.std()
+precision_mean_rf_smote = cv_precision_scores_rf_smote.mean()
+precision_std_rf_smote = cv_precision_scores_rf_smote.std()
+recall_mean_rf_smote = cv_recall_scores_rf_smote.mean()
+recall_std_rf_smote = cv_recall_scores_rf_smote.std()
+f1_mean_rf_smote = cv_f1_scores_rf_smote.mean()
+f1_std_rf_smote = cv_f1_scores_rf_smote.std()
+
+print("\nRandom Forest Classification Performance (SMOTE, Cross-validated):")
+print(f"Accuracy: {accuracy_mean_rf_smote:.4f} (±{accuracy_std_rf_smote:.4f})")
+print(f"Precision: {precision_mean_rf_smote:.4f} (±{precision_std_rf_smote:.4f})")
+print(f"Recall: {recall_mean_rf_smote:.4f} (±{recall_std_rf_smote:.4f})")
+print(f"F1 Score: {f1_mean_rf_smote:.4f} (±{f1_std_rf_smote:.4f})")
+
+print("\nDetailed Classification Report for Random Forest (SMOTE):")
+y_pred_cv_rf_smote = cross_val_predict(rf_pipeline_clf_smote, X, y_binned, cv=kf)
+print(classification_report(y_binned, y_pred_cv_rf_smote, target_names=target_names))
+
+# --- Decision Tree Classifier with SMOTE ---
+print("\nInitializing Decision Tree classifier pipeline with SMOTE...")
+dt_pipeline_clf_smote = ImbPipeline([
+    ('scaler', StandardScaler()),
+    ('smote', SMOTE(random_state=RANDOM_STATE)),
+    ('classifier', DecisionTreeClassifier(random_state=RANDOM_STATE))
+])
+
+print("Performing cross-validation for DT Classifier with SMOTE...")
+# Get scores
+cv_accuracy_scores_dt_smote = cross_val_score(dt_pipeline_clf_smote, X, y_binned, cv=kf, scoring='accuracy')
+cv_precision_scores_dt_smote = cross_val_score(dt_pipeline_clf_smote, X, y_binned, cv=kf, scoring='precision_weighted')
+cv_recall_scores_dt_smote = cross_val_score(dt_pipeline_clf_smote, X, y_binned, cv=kf, scoring='recall_weighted')
+cv_f1_scores_dt_smote = cross_val_score(dt_pipeline_clf_smote, X, y_binned, cv=kf, scoring='f1_weighted')
+
+# Calculate means and standard deviations
+accuracy_mean_dt_smote = cv_accuracy_scores_dt_smote.mean()
+accuracy_std_dt_smote = cv_accuracy_scores_dt_smote.std()
+precision_mean_dt_smote = cv_precision_scores_dt_smote.mean()
+precision_std_dt_smote = cv_precision_scores_dt_smote.std()
+recall_mean_dt_smote = cv_recall_scores_dt_smote.mean()
+recall_std_dt_smote = cv_recall_scores_dt_smote.std()
+f1_mean_dt_smote = cv_f1_scores_dt_smote.mean()
+f1_std_dt_smote = cv_f1_scores_dt_smote.std()
+
+print("\nDecision Tree Classification Performance (SMOTE, Cross-validated):")
+print(f"Accuracy: {accuracy_mean_dt_smote:.4f} (±{accuracy_std_dt_smote:.4f})")
+print(f"Precision: {precision_mean_dt_smote:.4f} (±{precision_std_dt_smote:.4f})")
+print(f"Recall: {recall_mean_dt_smote:.4f} (±{recall_std_dt_smote:.4f})")
+print(f"F1 Score: {f1_mean_dt_smote:.4f} (±{f1_std_dt_smote:.4f})")
+
+print("\nDetailed Classification Report for Decision Tree (SMOTE):")
+y_pred_cv_dt_smote = cross_val_predict(dt_pipeline_clf_smote, X, y_binned, cv=kf)
+print(classification_report(y_binned, y_pred_cv_dt_smote, target_names=target_names))
+
+print("\n--- SMOTE Evaluation Complete ---")
+
+# ==============================================================================
+# Section 17: Save Metrics for Reporting
+# ==============================================================================
+print("\n--- 17: Saving Metrics for Reporting ---")
 
 import json
 
 # Create a dictionary with all model metrics
 model_metrics = {
-    'Linear Regression': {
-        'Training R²': train_r2,
+    'Linear Regression (Train/Test Split)': {
         'Test R²': test_r2,
-        'Training RMSE': train_rmse,
         'Test RMSE': test_rmse,
-        'Training MAE': train_mae,
         'Test MAE': test_mae,
-        'Classification Accuracy': accuracy
+        'Classification Accuracy (Binned Test Pred)': accuracy_cv
     },
-    'Random Forest (Cross-validated)': {
+    'Random Forest Regression (Cross-validated)': {
         'Cross-validated R²': r2_cv,
         'Cross-validated R² Std': r2_cv_std,
         'Cross-validated RMSE': rmse_cv,
         'Cross-validated MAE': mae_cv,
-        'Cross-validated Accuracy': accuracy_cv,
-        'Cross-validated Precision': precision_cv,
-        'Cross-validated Recall': recall_cv,
-        'Cross-validated F1 Score': f1_cv
+        'Classification Accuracy (Binned CV Pred)': accuracy_cv
     },
-    'Random Forest Regression': {
-        'Training R²': train_r2,
-        'Test R²': test_r2,
-        'Training RMSE': train_rmse,
-        'Test RMSE': test_rmse
-    },
-    'Random Forest Classification': {
+    'Random Forest Classification (Cross-validated)': {
         'Cross-validated Accuracy': accuracy_mean,
         'Cross-validated Accuracy Std': accuracy_std,
         'Cross-validated Precision': precision_mean,
@@ -882,6 +1025,42 @@ model_metrics = {
         'Cross-validated Recall Std': recall_std,
         'Cross-validated F1 Score': f1_mean,
         'Cross-validated F1 Score Std': f1_std
+    },
+    'Decision Tree Regression (Cross-validated)': {
+        'Cross-validated R²': r2_cv_dt,
+        'Cross-validated R² Std': r2_cv_dt_std,
+        'Cross-validated RMSE': rmse_cv_dt,
+        'Cross-validated MAE': mae_cv_dt
+    },
+    'Decision Tree Classification (Cross-validated)': {
+        'Cross-validated Accuracy': accuracy_mean_dt,
+        'Cross-validated Accuracy Std': accuracy_std_dt,
+        'Cross-validated Precision': precision_mean_dt,
+        'Cross-validated Precision Std': precision_std_dt,
+        'Cross-validated Recall': recall_mean_dt,
+        'Cross-validated Recall Std': recall_std_dt,
+        'Cross-validated F1 Score': f1_mean_dt,
+        'Cross-validated F1 Score Std': f1_std_dt
+    },
+    'Random Forest Classification (SMOTE, CV)': {
+        'Cross-validated Accuracy': accuracy_mean_rf_smote,
+        'Cross-validated Accuracy Std': accuracy_std_rf_smote,
+        'Cross-validated Precision': precision_mean_rf_smote,
+        'Cross-validated Precision Std': precision_std_rf_smote,
+        'Cross-validated Recall': recall_mean_rf_smote,
+        'Cross-validated Recall Std': recall_std_rf_smote,
+        'Cross-validated F1 Score': f1_mean_rf_smote,
+        'Cross-validated F1 Score Std': f1_std_rf_smote
+    },
+    'Decision Tree Classification (SMOTE, CV)': {
+        'Cross-validated Accuracy': accuracy_mean_dt_smote,
+        'Cross-validated Accuracy Std': accuracy_std_dt_smote,
+        'Cross-validated Precision': precision_mean_dt_smote,
+        'Cross-validated Precision Std': precision_std_dt_smote,
+        'Cross-validated Recall': recall_mean_dt_smote,
+        'Cross-validated Recall Std': recall_std_dt_smote,
+        'Cross-validated F1 Score': f1_mean_dt_smote,
+        'Cross-validated F1 Score Std': f1_std_dt_smote
     }
 }
 
@@ -897,38 +1076,42 @@ print("\n--- All Analysis Complete ---")
 print("\nYou can now generate an HTML report by running:")
 print("python generate_report.py")
 
-# Adding a Decision Tree Visualization
-print("\n--- Visualizing a Decision Tree ---")
+# ==============================================================================
+# Section 18: Visualizing a Decision Tree (Example)
+# ==============================================================================
+print("\n--- 18: Visualizing a Shallow Decision Tree (Example) ---")
 
 # Create a decision tree classifier with limited depth for visualization
-dt_classifier = DecisionTreeClassifier(max_depth=3, random_state=RANDOM_STATE)
-dt_classifier.fit(X_train, y_train_binned)
+# Note: This uses the train/test split data without scaling for simplicity of visualization
+dt_classifier_viz = DecisionTreeClassifier(max_depth=3, random_state=RANDOM_STATE)
+dt_classifier_viz.fit(X_train, y_train_binned) # Fit on original train split
 
 # Create a visualization of the decision tree
-plt.figure(figsize=(15, 10))
-plot_tree(dt_classifier, 
+plt.figure(figsize=(20, 12)) # Increased figure size
+plot_tree(dt_classifier_viz, 
           filled=True, 
           feature_names=X.columns.tolist(), 
           class_names=target_names,
           rounded=True,
-          fontsize=7)
-plt.title('Decision Tree for View Count Classification (Depth=3)')
+          fontsize=8) # Adjusted fontsize
+plt.title('Example Decision Tree for Classification (Depth=3)')
 plt.tight_layout()
 plt.savefig(os.path.join(RESULTS_DIR, 'decision_tree_visualization.png'))
-print(f"Decision tree visualization saved to {RESULTS_DIR}/decision_tree_visualization.png")
+print(f"Example Decision tree visualization saved to {RESULTS_DIR}/decision_tree_visualization.png")
 
-# Similarly, create a regression decision tree
-dt_regressor = DecisionTreeRegressor(max_depth=3, random_state=RANDOM_STATE)
-dt_regressor.fit(X_train, y_train)
+# Similarly, create a regression decision tree for visualization
+dt_regressor_viz = DecisionTreeRegressor(max_depth=3, random_state=RANDOM_STATE)
+dt_regressor_viz.fit(X_train, y_train) # Fit on original train split
 
 # Create a visualization of the regression decision tree
-plt.figure(figsize=(15, 10))
-plot_tree(dt_regressor, 
+plt.figure(figsize=(20, 12)) # Increased figure size
+plot_tree(dt_regressor_viz, 
           filled=True, 
           feature_names=X.columns.tolist(), 
           rounded=True,
-          fontsize=7)
-plt.title('Regression Decision Tree for View Count Prediction (Depth=3)')
+          fontsize=8, # Adjusted fontsize
+          precision=0) # Display node values as integers for cleaner look
+plt.title('Example Regression Decision Tree (Depth=3)')
 plt.tight_layout()
 plt.savefig(os.path.join(RESULTS_DIR, 'regression_decision_tree_visualization.png'))
-print(f"Regression decision tree visualization saved to {RESULTS_DIR}/regression_decision_tree_visualization.png") 
+print(f"Example Regression decision tree visualization saved to {RESULTS_DIR}/regression_decision_tree_visualization.png") 

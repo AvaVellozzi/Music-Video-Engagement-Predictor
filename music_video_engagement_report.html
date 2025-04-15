@@ -79,7 +79,7 @@
             <div class="header">
                 <h1>Music Video Engagement Predictor</h1>
                 <h2>Analysis Report</h2>
-                <p>Generated on 2025-04-11 15:28:29</p>
+                <p>Generated on 2025-04-14 20:29:42</p>
             </div>
             
             <div class="section">
@@ -228,7 +228,7 @@
                         <th>Training RMSE</th>
                         <th>Test RMSE</th>
                     </tr>
-    <tr><td>Linear Regression</td><td>0.9270</td><td class='highlight'>0.4563</td><td>37892433.13</td><td>101086135.12</td></tr><tr><td>Random Forest (Cross-validated)</td><td>0.4781 (±0.0145)</td><td class='highlight'>0.4781 (±0.0145)</td><td>100827966.24</td><td>100827966.24</td></tr><tr><td>Random Forest Regression</td><td>0.9270</td><td class='highlight'>0.4563</td><td>37892433.13</td><td>101086135.12</td></tr>
+    
                 </table>
                 
                 <h3>Classification Metrics</h3>
@@ -240,15 +240,32 @@
                         <th>Recall</th>
                         <th>F1 Score</th>
                     </tr>
-    <tr><td>Linear Regression</td><td class='highlight'>0.5897</td><td>N/A</td><td>N/A</td><td>N/A</td></tr><tr><td>Random Forest (Cross-validated)</td><td class='highlight'>0.4903</td><td>0.5508</td><td>0.4903</td><td>0.4280</td></tr><tr><td>Random Forest Classification</td><td class='highlight'>0.5913 (±0.0085)</td><td>0.5978 (±0.0070)</td><td>0.5913 (±0.0085)</td><td>0.5854 (±0.0083)</td></tr>
+    <tr><td>Random Forest Classification (Cross-validated)</td><td class='highlight'>0.5917 (±0.0089)</td><td>0.5984 (±0.0075)</td><td>0.5917 (±0.0089)</td><td>0.5858 (±0.0087)</td></tr><tr><td>Decision Tree Classification (Cross-validated)</td><td class='highlight'>0.4746 (±0.0084)</td><td>0.4753 (±0.0088)</td><td>0.4746 (±0.0084)</td><td>0.4748 (±0.0087)</td></tr><tr><td>Random Forest Classification (SMOTE, CV)</td><td class='highlight'>0.5693 (±0.0076)</td><td>0.5669 (±0.0078)</td><td>0.5693 (±0.0076)</td><td>0.5675 (±0.0076)</td></tr><tr><td>Decision Tree Classification (SMOTE, CV)</td><td class='highlight'>0.4622 (±0.0082)</td><td>0.4669 (±0.0093)</td><td>0.4622 (±0.0082)</td><td>0.4625 (±0.0084)</td></tr>
                 </table>
             </div>
             
             <div class="section">
                 <h2>7. Conclusion</h2>
-                <p>Based on the analysis, Random Forest (Cross-validated) achieved the highest performance for predicting music video engagement metrics with a test R² value of 0.4781, indicating that it can explain approximately 47.8% of the variance in view counts.</p>
+                <p>Based on the analysis, Random Forest Regression (Cross-validated) achieved the highest performance for predicting music video engagement metrics with a test R² value of 0.4780, indicating that it can explain approximately 47.8% of the variance in view counts.</p>
                 <p>Feature importance analysis shows that user engagement metrics like Comments, Stream, Duration_ms are the most important predictors of video views. This suggests that videos that generate more user interaction tend to have higher view counts.</p>
-                <p>For classification into view count categories, the Random Forest Classification achieved an accuracy rate of 59.13%, which is a significant improvement over random guessing (which would be 20% for 5 categories).</p>
+                <p>For classification into view count categories, the Random Forest Classification (Cross-validated) achieved an accuracy rate of 59.17%, which is a significant improvement over random guessing (which would be 20% for 5 categories).</p>
+            </div>
+            
+            <div class="section">
+                <h2>Resampling Experiment (SMOTE)</h2>
+                <p>
+                An experiment was conducted using the Synthetic Minority Over-sampling Technique (SMOTE) within the cross-validation pipeline 
+                to address the moderate class imbalance observed in the view categories. The goal was to potentially improve the performance 
+                of the classification models (Random Forest and Decision Tree) by providing more examples of the minority classes.
+                </p>
+                <p>
+                However, the results indicated that applying SMOTE did not lead to an improvement in the overall cross-validated 
+                performance metrics (Accuracy, Precision, Recall, F1-score) for either the Random Forest or the Decision Tree classifier 
+                when compared to training on the original data distribution. While SMOTE might subtly alter the prediction balance across 
+                individual classes (as seen in detailed classification reports), it did not enhance the overall predictive power in this specific scenario. 
+                This suggests that for this dataset and these models, the benefits of oversampling were potentially outweighed by other factors, 
+                such as the introduction of synthetic noise or modifications to the decision boundaries that did not generalize well.
+                </p>
             </div>
             
             <div class="footer">

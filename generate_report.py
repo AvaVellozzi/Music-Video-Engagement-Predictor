@@ -441,6 +441,23 @@ def generate_html_report():
                 <p>For classification into view count categories, the {best_classification_model} achieved an accuracy rate of {best_classification_acc:.2%}, which is a significant improvement over random guessing (which would be 20% for 5 categories).</p>
             </div>
             
+            <div class="section">
+                <h2>Resampling Experiment (SMOTE)</h2>
+                <p>
+                An experiment was conducted using the Synthetic Minority Over-sampling Technique (SMOTE) within the cross-validation pipeline 
+                to address the moderate class imbalance observed in the view categories. The goal was to potentially improve the performance 
+                of the classification models (Random Forest and Decision Tree) by providing more examples of the minority classes.
+                </p>
+                <p>
+                However, the results indicated that applying SMOTE did not lead to an improvement in the overall cross-validated 
+                performance metrics (Accuracy, Precision, Recall, F1-score) for either the Random Forest or the Decision Tree classifier 
+                when compared to training on the original data distribution. While SMOTE might subtly alter the prediction balance across 
+                individual classes (as seen in detailed classification reports), it did not enhance the overall predictive power in this specific scenario. 
+                This suggests that for this dataset and these models, the benefits of oversampling were potentially outweighed by other factors, 
+                such as the introduction of synthetic noise or modifications to the decision boundaries that did not generalize well.
+                </p>
+            </div>
+            
             <div class="footer">
                 <p>Music Video Engagement Predictor Project</p>
                 <p>© 2025. All rights reserved.</p>
