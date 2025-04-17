@@ -186,6 +186,8 @@ print(df.columns.tolist())
 print("\n--- 6.5: Feature Correlation Analysis ---")
 
 # Create a correlation matrix for numerical features
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import seaborn as sns
 
@@ -199,6 +201,7 @@ sns.heatmap(corr_matrix, annot=True, cmap='coolwarm', linewidths=0.5, fmt=".2f")
 plt.title('Feature Correlation Heatmap')
 plt.tight_layout()
 plt.savefig(os.path.join(RESULTS_DIR, 'correlation_heatmap.png'))
+plt.close()
 print(f"Correlation heatmap saved to {RESULTS_DIR}/correlation_heatmap.png")
 
 # Display top correlations with the target variable
@@ -289,6 +292,7 @@ plt.xlabel(f'Principal Component 1 ({explained_variance[0]:.1%} variance)')
 plt.ylabel(f'Principal Component 2 ({explained_variance[1]:.1%} variance)')
 plt.grid(alpha=0.3)
 plt.savefig(os.path.join(RESULTS_DIR, 'pca_visualization_views.png'))
+plt.close()
 print(f"PCA visualization saved to {RESULTS_DIR}/pca_visualization_views.png")
 
 # 3D PCA Visualization with 3 components
@@ -339,6 +343,7 @@ ax.grid(True)
 
 # Save the figure
 plt.savefig(os.path.join(RESULTS_DIR, 'pca_3d_visualization.png'))
+plt.close()
 print(f"3D PCA visualization saved to {RESULTS_DIR}/pca_3d_visualization.png")
 
 # Feature importance in PCA
@@ -359,6 +364,7 @@ loadings_plot = sns.heatmap(loadings, cmap='coolwarm', annot=True, fmt=".3f")
 plt.title('PCA Feature Loadings for View Prediction')
 plt.tight_layout()
 plt.savefig(os.path.join(RESULTS_DIR, 'pca_loadings_views.png'))
+plt.close()
 print(f"PCA loadings heatmap saved to {RESULTS_DIR}/pca_loadings_views.png")
 
 # Add a visualization to show how PC1 and PC2 correlate with Views
@@ -381,6 +387,7 @@ if target_views is not None:
     
     plt.tight_layout()
     plt.savefig(os.path.join(RESULTS_DIR, 'pca_vs_views.png'))
+    plt.close()
     print(f"PCA components vs Views visualization saved to {RESULTS_DIR}/pca_vs_views.png")
 
 # ==============================================================================
@@ -424,80 +431,90 @@ from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error
 import math
 
-# Initialize and train the linear regression model
-print("Training a basic linear regression model...")
+# Train the model
+print("Training linear regression model...")
 lr_model = LinearRegression()
 lr_model.fit(X_train, y_train)
 
-# Make predictions on both training and test sets
+# Predict
 y_train_pred = lr_model.predict(X_train)
 y_test_pred = lr_model.predict(X_test)
 
-# Evaluate model performance
-train_mse = mean_squared_error(y_train, y_train_pred)
-test_mse = mean_squared_error(y_test, y_test_pred)
-train_rmse = math.sqrt(train_mse)
-test_rmse = math.sqrt(test_mse)
-train_mae = mean_absolute_error(y_train, y_train_pred)
-test_mae = mean_absolute_error(y_test, y_test_pred)
-train_r2 = r2_score(y_train, y_train_pred)
-test_r2 = r2_score(y_test, y_test_pred)
+# Evaluate
+metrics = {
+    'Train MSE': mean_squared_error(y_train, y_train_pred),
+    'Test MSE': mean_squared_error(y_test, y_test_pred),
+    'Train MAE': mean_absolute_error(y_train, y_train_pred),
+    'Test MAE': mean_absolute_error(y_test, y_test_pred),
+    'Train R²': r2_score(y_train, y_train_pred),
+    'Test R²': r2_score(y_test, y_test_pred)
+}
+metrics['Train RMSE'] = math.sqrt(metrics['Train MSE'])
+metrics['Test RMSE'] = math.sqrt(metrics['Test MSE'])
 
-# Print evaluation metrics
+train_r2 = metrics['Train R²']
+test_r2 = metrics['Test R²']
+train_rmse = metrics['Train RMSE']
+test_rmse = metrics['Test RMSE']
+train_mae = metrics['Train MAE']
+test_mae = metrics['Test MAE']
+
+# Print metrics
 print("\nLinear Regression Model Performance:")
-print(f"Training set MSE: {train_mse:.2f}")
-print(f"Test set MSE: {test_mse:.2f}")
-print(f"Training set RMSE: {train_rmse:.2f}")
-print(f"Test set RMSE: {test_rmse:.2f}")
-print(f"Training set MAE: {train_mae:.2f}")
-print(f"Test set MAE: {test_mae:.2f}")
-print(f"Training set R²: {train_r2:.4f}")
-print(f"Test set R²: {test_r2:.4f}")
+for k, v in metrics.items():
+    print(f"{k}: {v:,.4f}" if 'R²' in k else f"{k}: {v:,.2f}")
 
-# Check for feature importance (coefficients)
+# Feature importance (coefficients)
 feature_importance = pd.DataFrame({
     'Feature': X_train.columns,
     'Coefficient': lr_model.coef_
 })
-feature_importance['Abs_Coefficient'] = abs(feature_importance['Coefficient'])
+feature_importance['Abs_Coefficient'] = feature_importance['Coefficient'].abs()
 feature_importance = feature_importance.sort_values('Abs_Coefficient', ascending=False)
 
-print("\nTop 10 most important features in linear regression model:")
+print("\nTop 10 most important features:")
 print(feature_importance.head(10))
 
-# Plot actual vs predicted values on test set
-plt.figure(figsize=(10, 8))
-plt.scatter(y_test, y_test_pred, alpha=0.5)
-plt.plot([y_test.min(), y_test.max()], [y_test.min(), y_test.max()], 'r--')
-plt.xlabel('Actual Views')
-plt.ylabel('Predicted Views')
-plt.title('Linear Regression: Actual vs Predicted Views (Test Set)')
-plt.grid(alpha=0.3)
-plt.savefig(os.path.join(RESULTS_DIR, 'linear_regression_actual_vs_predicted.png'))
-print(f"Linear regression actual vs predicted plot saved to {RESULTS_DIR}/linear_regression_actual_vs_predicted.png")
+# === Visualizations ===
+def save_plot(fig_name, plot_fn):
+    plt.figure(figsize=(10, 8))
+    plot_fn()
+    plt.grid(alpha=0.3)
+    plt.tight_layout()
+    file_path = os.path.join(RESULTS_DIR, fig_name)
+    plt.savefig(file_path)
+    plt.close()
+    print(f"Saved: {file_path}")
 
-# Plot residuals
-plt.figure(figsize=(10, 8))
-residuals = y_test - y_test_pred
-plt.scatter(y_test_pred, residuals, alpha=0.5)
-plt.axhline(y=0, color='r', linestyle='-')
-plt.xlabel('Predicted Views')
-plt.ylabel('Residuals')
-plt.title('Linear Regression: Residuals Plot')
-plt.grid(alpha=0.3)
-plt.savefig(os.path.join(RESULTS_DIR, 'linear_regression_residuals.png'))
-print(f"Linear regression residuals plot saved to {RESULTS_DIR}/linear_regression_residuals.png")
+# Plot: Actual vs Predicted
+save_plot('linear_regression_actual_vs_predicted.png', lambda: (
+    plt.scatter(y_test, y_test_pred, alpha=0.5),
+    plt.plot([y_test.min(), y_test.max()], [y_test.min(), y_test.max()], 'r--'),
+    plt.xlabel('Actual Views'),
+    plt.ylabel('Predicted Views'),
+    plt.title('Linear Regression: Actual vs Predicted')
+))
 
-# Try a log transformation for better visualization
-plt.figure(figsize=(10, 8))
-plt.scatter(np.log10(y_test + 1), np.log10(y_test_pred + 1), alpha=0.5)
-plt.plot([0, np.log10(y_test.max() + 1)], [0, np.log10(y_test.max() + 1)], 'r--')
-plt.xlabel('Log10(Actual Views)')
-plt.ylabel('Log10(Predicted Views)')
-plt.title('Linear Regression: Log-transformed Actual vs Predicted Views')
-plt.grid(alpha=0.3)
-plt.savefig(os.path.join(RESULTS_DIR, 'linear_regression_log_transformed.png'))
-print(f"Log-transformed actual vs predicted plot saved to {RESULTS_DIR}/linear_regression_log_transformed.png")
+# Plot: Residuals
+save_plot('linear_regression_residuals.png', lambda: (
+    plt.scatter(y_test_pred, y_test - y_test_pred, alpha=0.5),
+    plt.axhline(0, color='r', linestyle='--'),
+    plt.xlabel('Predicted Views'),
+    plt.ylabel('Residuals'),
+    plt.title('Linear Regression: Residuals')
+))
+
+# Plot: Log-Transformed Actual vs Predicted
+# Prevent log10 of negative
+y_test_pred_clipped = np.maximum(y_test_pred, 0)
+
+save_plot('linear_regression_log_transformed.png', lambda: (
+    plt.scatter(np.log10(y_test + 1), np.log10(y_test_pred_clipped + 1), alpha=0.5),
+    plt.plot([0, np.log10(y_test.max() + 1)], [0, np.log10(y_test.max() + 1)], 'r--'),
+    plt.xlabel('Log10(Actual Views)'),
+    plt.ylabel('Log10(Predicted Views)'),
+    plt.title('Linear Regression: Log-Transformed Actual vs Predicted')
+))
 
 print("\n--- Basic Linear Regression Analysis Complete ---")
 
@@ -563,6 +580,7 @@ plt.ylabel('Actual')
 plt.title('Confusion Matrix of View Count Categories')
 plt.tight_layout()
 plt.savefig(os.path.join(RESULTS_DIR, 'view_categories_confusion_matrix.png'))
+plt.close()
 print(f"Confusion matrix saved to {RESULTS_DIR}/view_categories_confusion_matrix.png")
 
 # Display distribution of view categories in test set
@@ -583,6 +601,7 @@ for bar, count, percentage in zip(bars, category_counts, category_percentages):
 
 plt.tight_layout()
 plt.savefig(os.path.join(RESULTS_DIR, 'view_categories_distribution.png'))
+plt.close()
 print(f"View categories distribution plot saved to {RESULTS_DIR}/view_categories_distribution.png")
 
 print("\n--- Classification Analysis Complete ---")
@@ -652,6 +671,7 @@ plt.grid(axis='y', alpha=0.3)
 plt.legend()
 plt.tight_layout()
 plt.savefig(os.path.join(RESULTS_DIR, 'rf_regression_r2_scores.png'))
+plt.close()
 print(f"R² scores plot saved to {RESULTS_DIR}/rf_regression_r2_scores.png")
 
 # Convert to classification problem by binning
@@ -688,6 +708,7 @@ plt.ylabel('Actual')
 plt.title('Confusion Matrix - Random Forest (Cross-validated)')
 plt.tight_layout()
 plt.savefig(os.path.join(RESULTS_DIR, 'rf_confusion_matrix.png'))
+plt.close()
 print(f"Random Forest confusion matrix saved to {RESULTS_DIR}/rf_confusion_matrix.png")
 
 # Train a final model on the entire dataset (for feature importance)
@@ -709,6 +730,7 @@ sns.barplot(x='Importance', y='Feature', data=feature_importance_rf.head(15))
 plt.title('Random Forest Feature Importance')
 plt.tight_layout()
 plt.savefig(os.path.join(RESULTS_DIR, 'rf_feature_importance.png'))
+plt.close()
 print(f"Feature importance plot saved to {RESULTS_DIR}/rf_feature_importance.png")
 
 # Compare Linear Regression vs Random Forest
@@ -796,6 +818,7 @@ plt.grid(axis='y', alpha=0.3)
 plt.legend()
 plt.tight_layout()
 plt.savefig(os.path.join(RESULTS_DIR, 'rf_classification_accuracy_scores.png'))
+plt.close()
 print(f"Accuracy scores plot saved to {RESULTS_DIR}/rf_classification_accuracy_scores.png")
 
 # Get predictions for confusion matrix
@@ -812,6 +835,7 @@ plt.ylabel('Actual')
 plt.title('Confusion Matrix - RF Classification (Cross-validated)')
 plt.tight_layout()
 plt.savefig(os.path.join(RESULTS_DIR, 'rf_classification_confusion_matrix.png'))
+plt.close()
 print(f"RF Classification confusion matrix saved to {RESULTS_DIR}/rf_classification_confusion_matrix.png")
 
 # Train a final model on all data for feature importance
@@ -831,6 +855,7 @@ sns.barplot(x='Importance', y='Feature', data=feature_importance.head(15))
 plt.title('Random Forest Classification - Feature Importance')
 plt.tight_layout()
 plt.savefig(os.path.join(RESULTS_DIR, 'rf_classification_feature_importance.png'))
+plt.close()
 print(f"Classification feature importance plot saved to {RESULTS_DIR}/rf_classification_feature_importance.png")
 
 # Summary comparison
@@ -915,6 +940,7 @@ plot_tree(dt_classifier,
 plt.title('Decision Tree for View Count Classification (Depth=3)')
 plt.tight_layout()
 plt.savefig(os.path.join(RESULTS_DIR, 'decision_tree_visualization.png'))
+plt.close()
 print(f"Decision tree visualization saved to {RESULTS_DIR}/decision_tree_visualization.png")
 
 # Similarly, create a regression decision tree
@@ -931,4 +957,16 @@ plot_tree(dt_regressor,
 plt.title('Regression Decision Tree for View Count Prediction (Depth=3)')
 plt.tight_layout()
 plt.savefig(os.path.join(RESULTS_DIR, 'regression_decision_tree_visualization.png'))
+plt.close()
 print(f"Regression decision tree visualization saved to {RESULTS_DIR}/regression_decision_tree_visualization.png") 
+
+# Modularize so can use cleaned data in other files
+def load_data():
+    """
+    Returns preprocessed train/test splits and feature names.
+    Can be imported and used in other scripts.
+    """
+    return X_train, X_test, y_train, y_test, X.columns.tolist()
+
+if __name__ == "__main__":
+    X_train, X_test, y_train, y_test, feature_names = load_data()
