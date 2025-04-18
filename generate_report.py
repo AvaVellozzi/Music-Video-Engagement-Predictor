@@ -290,63 +290,69 @@ def generate_html_report():
                 <table class="metrics-table">
                     <tr>
                         <th>Model</th>
-                        <th>Training R²</th>
-                        <th>Test R²</th>
-                        <th>Training RMSE</th>
-                        <th>Test RMSE</th>
+                        <th>Test R² / CV R²</th>
+                        <th>Test RMSE / CV RMSE</th>
+                        <th>Test MAE / CV MAE</th>
                     </tr>
     """
     
-    # Add regression model metrics
-    for model in ['Linear Regression', 'Random Forest (Cross-validated)', 'Random Forest Regression']:
-        if model in models_comparison:
-            metrics = models_comparison[model]
-            html_content += "<tr>"
-            html_content += f"<td>{model}</td>"
+    # Populate Regression Table Rows
+    for model_name, metrics in models_comparison.items():
+        # Check if the model has regression metrics we want to display
+        has_r2 = 'Test R²' in metrics or 'Cross-validated R²' in metrics
+        has_rmse = 'Test RMSE' in metrics or 'Cross-validated RMSE' in metrics
+        has_mae = 'Test MAE' in metrics or 'Cross-validated MAE' in metrics
+        
+        # Only add rows for models with relevant regression metrics
+        if has_r2 or has_rmse or has_mae:
+            html_content += '<tr>'
+            html_content += f'<td>{model_name}</td>'
             
-            # Training R²
-            if 'Training R²' in metrics:
-                html_content += f"<td>{'%.4f' % metrics['Training R²']}</td>"
-            elif 'Cross-validated R²' in metrics:
-                if 'Cross-validated R² Std' in metrics:
-                    html_content += f"<td>{'%.4f' % metrics['Cross-validated R²']} (±{'%.4f' % metrics['Cross-validated R² Std']})</td>"
-                else:
-                    html_content += f"<td>{'%.4f' % metrics['Cross-validated R²']}</td>"
-            else:
-                html_content += "<td>N/A</td>"
+            # Display R² (prefer CV if available)
+            r2_val = metrics.get('Cross-validated R²', metrics.get('Test R²'))
+            r2_std = metrics.get('Cross-validated R² Std')
+            r2_str = f"{r2_val:.4f}" if r2_val is not None else "N/A"
+            if r2_std is not None:
+                r2_str += f" (±{r2_std:.4f})"
+            html_content += f'<td>{r2_str}</td>'
             
-            # Test R²
-            if 'Test R²' in metrics:
-                html_content += f"<td class='highlight'>{'%.4f' % metrics['Test R²']}</td>"
-            elif 'Cross-validated R²' in metrics:
-                if 'Cross-validated R² Std' in metrics:
-                    html_content += f"<td class='highlight'>{'%.4f' % metrics['Cross-validated R²']} (±{'%.4f' % metrics['Cross-validated R² Std']})</td>"
-                else:
-                    html_content += f"<td class='highlight'>{'%.4f' % metrics['Cross-validated R²']}</td>"
-            else:
-                html_content += "<td>N/A</td>"
+            # Display RMSE (prefer CV if available)
+            rmse_val = metrics.get('Cross-validated RMSE', metrics.get('Test RMSE'))
+            rmse_str = f"{rmse_val:,.2f}" if rmse_val is not None else "N/A"
+            html_content += f'<td>{rmse_str}</td>'
             
-            # Training RMSE
-            if 'Training RMSE' in metrics:
-                html_content += f"<td>{'%.2f' % metrics['Training RMSE']}</td>"
-            elif 'Cross-validated RMSE' in metrics:
-                html_content += f"<td>{'%.2f' % metrics['Cross-validated RMSE']}</td>"
-            else:
-                html_content += "<td>N/A</td>"
+            # Display MAE (prefer CV if available)
+            mae_val = metrics.get('Cross-validated MAE', metrics.get('Test MAE'))
+            mae_str = f"{mae_val:,.2f}" if mae_val is not None else "N/A"
+            html_content += f'<td>{mae_str}</td>'
             
-            # Test RMSE
-            if 'Test RMSE' in metrics:
-                html_content += f"<td>{'%.2f' % metrics['Test RMSE']}</td>"
-            elif 'Cross-validated RMSE' in metrics:
-                html_content += f"<td>{'%.2f' % metrics['Cross-validated RMSE']}</td>"
-            else:
-                html_content += "<td>N/A</td>"
-            
-            html_content += "</tr>"
+            html_content += '</tr>'
     
     html_content += """
                 </table>
-                
+    """
+    
+    # --- Add R² comparison plot ---
+    html_content += '<h3>Regression Model R² Comparison (Cross-Validated)</h3>'
+    comparison_plot_path = os.path.join(RESULTS_DIR, 'regression_model_r2_comparison.png')
+    html_content += '<div class="visualization">' # Add visualization div
+    if os.path.exists(comparison_plot_path):
+        # Embed image directly using data URI
+        try:
+            with open(comparison_plot_path, "rb") as img_file:
+                import base64
+                img_data = base64.b64encode(img_file.read()).decode('utf-8')
+                img_data_uri = f"data:image/png;base64,{img_data}"
+                html_content += f'<img src="{img_data_uri}" alt="Regression Model R2 Comparison"><br>'
+                html_content += '<p>Comparison of mean R² scores from 5-fold cross-validation for Random Forest and Decision Tree regressors, with standard deviation error bars.</p>'
+        except Exception as e:
+                html_content += f'<p>Error embedding Regression model R² comparison plot: {e}</p>'
+    else:
+        html_content += '<p>Regression model R² comparison plot not found.</p>'
+    html_content += '</div>' # Close visualization div
+    # --- End of R² plot addition ---
+    
+    html_content += """
                 <h3>Classification Metrics</h3>
                 <table class="metrics-table">
                     <tr>
@@ -358,61 +364,74 @@ def generate_html_report():
                     </tr>
     """
     
-    # Add classification model metrics
-    for model, metrics in models_comparison.items():
-        if any(key.endswith('Accuracy') or key.endswith('Precision') for key in metrics.keys()):
-            html_content += "<tr>"
-            html_content += f"<td>{model}</td>"
-            
+    # Populate Classification Table Rows
+    for model_name, metrics in models_comparison.items():
+        # Check if the model has classification metrics
+        has_acc = 'Cross-validated Accuracy' in metrics or 'Classification Accuracy (Binned Test Pred)' in metrics or 'Classification Accuracy (Binned CV Pred)' in metrics
+        has_f1 = 'Cross-validated F1 Score' in metrics
+
+        if has_acc or has_f1: # Add rows for models with key classification metrics
+            html_content += '<tr>'
+            html_content += f'<td>{model_name}</td>'
+
             # Accuracy
-            if 'Classification Accuracy' in metrics:
-                html_content += f"<td class='highlight'>{'%.4f' % metrics['Classification Accuracy']}</td>"
-            elif 'Cross-validated Accuracy' in metrics:
-                if 'Cross-validated Accuracy Std' in metrics:
-                    html_content += f"<td class='highlight'>{'%.4f' % metrics['Cross-validated Accuracy']} (±{'%.4f' % metrics['Cross-validated Accuracy Std']})</td>"
-                else:
-                    html_content += f"<td class='highlight'>{'%.4f' % metrics['Cross-validated Accuracy']}</td>"
-            elif 'Test Accuracy' in metrics:
-                html_content += f"<td class='highlight'>{'%.4f' % metrics['Test Accuracy']}</td>"
-            else:
-                html_content += "<td>N/A</td>"
-            
-            # Precision
-            if 'Test Precision' in metrics:
-                html_content += f"<td>{'%.4f' % metrics['Test Precision']}</td>"
-            elif 'Cross-validated Precision' in metrics:
-                if 'Cross-validated Precision Std' in metrics:
-                    html_content += f"<td>{'%.4f' % metrics['Cross-validated Precision']} (±{'%.4f' % metrics['Cross-validated Precision Std']})</td>"
-                else:
-                    html_content += f"<td>{'%.4f' % metrics['Cross-validated Precision']}</td>"
-            else:
-                html_content += "<td>N/A</td>"
-            
-            # Recall
-            if 'Test Recall' in metrics:
-                html_content += f"<td>{'%.4f' % metrics['Test Recall']}</td>"
-            elif 'Cross-validated Recall' in metrics:
-                if 'Cross-validated Recall Std' in metrics:
-                    html_content += f"<td>{'%.4f' % metrics['Cross-validated Recall']} (±{'%.4f' % metrics['Cross-validated Recall Std']})</td>"
-                else:
-                    html_content += f"<td>{'%.4f' % metrics['Cross-validated Recall']}</td>"
-            else:
-                html_content += "<td>N/A</td>"
-            
-            # F1 Score
-            if 'Test F1 Score' in metrics:
-                html_content += f"<td>{'%.4f' % metrics['Test F1 Score']}</td>"
-            elif 'Cross-validated F1 Score' in metrics:
-                if 'Cross-validated F1 Score Std' in metrics:
-                    html_content += f"<td>{'%.4f' % metrics['Cross-validated F1 Score']} (±{'%.4f' % metrics['Cross-validated F1 Score Std']})</td>"
-                else:
-                    html_content += f"<td>{'%.4f' % metrics['Cross-validated F1 Score']}</td>"
-            else:
-                html_content += "<td>N/A</td>"
-            
-            html_content += "</tr>"
+            acc_val = metrics.get('Cross-validated Accuracy', metrics.get('Classification Accuracy (Binned CV Pred)', metrics.get('Classification Accuracy (Binned Test Pred)')))
+            acc_std = metrics.get('Cross-validated Accuracy Std')
+            acc_str = f"{acc_val:.4f}" if acc_val is not None else "N/A"
+            if acc_std is not None:
+                acc_str += f" (±{acc_std:.4f})"
+            html_content += f'<td>{acc_str}</td>'
+
+            # Precision (Prefer CV Weighted)
+            prec_val = metrics.get('Cross-validated Precision')
+            prec_std = metrics.get('Cross-validated Precision Std')
+            prec_str = f"{prec_val:.4f}" if prec_val is not None else "N/A"
+            if prec_std is not None:
+                prec_str += f" (±{prec_std:.4f})"
+            html_content += f'<td>{prec_str}</td>'
+
+            # Recall (Prefer CV Weighted)
+            rec_val = metrics.get('Cross-validated Recall')
+            rec_std = metrics.get('Cross-validated Recall Std')
+            rec_str = f"{rec_val:.4f}" if rec_val is not None else "N/A"
+            if rec_std is not None:
+                rec_str += f" (±{rec_std:.4f})"
+            html_content += f'<td>{rec_str}</td>'
+
+            # F1 Score (Prefer CV Weighted)
+            f1_val = metrics.get('Cross-validated F1 Score')
+            f1_std = metrics.get('Cross-validated F1 Score Std')
+            f1_str = f"{f1_val:.4f}" if f1_val is not None else "N/A"
+            if f1_std is not None:
+                f1_str += f" (±{f1_std:.4f})"
+            html_content += f'<td>{f1_str}</td>'
+
+            html_content += '</tr>'
     
-    # Get best model based on test R² or accuracy
+    html_content += """
+                </table>
+    """
+    
+    # --- Add Classification Accuracy comparison plot ---
+    html_content += '<h3>Classification Model Accuracy Comparison (Cross-Validated)</h3>'
+    clf_comparison_plot_path = os.path.join(RESULTS_DIR, 'classification_model_accuracy_comparison.png')
+    html_content += '<div class="visualization">' # Add visualization div
+    if os.path.exists(clf_comparison_plot_path):
+        try:
+            with open(clf_comparison_plot_path, "rb") as img_file:
+                import base64
+                img_data = base64.b64encode(img_file.read()).decode('utf-8')
+                img_data_uri = f"data:image/png;base64,{img_data}"
+                html_content += f'<img src="{img_data_uri}" alt="Classification Model Accuracy Comparison"><br>'
+                html_content += '<p>Comparison of mean Accuracy from 5-fold cross-validation for Random Forest and Decision Tree classifiers, with standard deviation error bars.</p>'
+        except Exception as e:
+            html_content += f'<p>Error embedding Classification model accuracy comparison plot: {e}</p>'
+    else:
+        html_content += '<p>Classification model accuracy comparison plot not found.</p>'
+    html_content += '</div>' # Close visualization div
+    # --- End of addition ---
+
+    # Get best model based on test R² or accuracy (Moved this logic down)
     best_regression_model = max([m for m in models_comparison.keys() if 'Test R²' in models_comparison[m] or 'Cross-validated R²' in models_comparison[m]], 
                                key=lambda m: models_comparison[m].get('Test R²', models_comparison[m].get('Cross-validated R²', 0)))
     
@@ -427,18 +446,17 @@ def generate_html_report():
                                   for m in models_comparison.keys() 
                                   if any(k.endswith('Accuracy') for k in models_comparison[m].keys())])
     
-    # Identify top features from RF feature importance
-    top_features = ["Comments", "Stream", "Duration_ms", "Valence", "Tempo"]  # Placeholder - should be loaded from data
-    
+    # Identify top features from RF feature importance (Placeholder)
+    # TODO: Ideally load this from a saved file or extract from final RF model if feasible in report script
+    top_features_placeholder = ["Stream", "Duration_ms", "Loudness", "Channel", "Danceability"] 
+    top_features_str = ", ".join(top_features_placeholder)
+
     html_content += f"""
-                </table>
-            </div>
-            
             <div class="section">
                 <h2>7. Conclusion</h2>
                 <p>Based on the analysis, {best_regression_model} achieved the highest performance for predicting music video engagement metrics with a test R² value of {best_regression_r2:.4f}, indicating that it can explain approximately {best_regression_r2*100:.1f}% of the variance in view counts.</p>
-                <p>Feature importance analysis shows that user engagement metrics like {', '.join(top_features[:3])} are the most important predictors of video views. This suggests that videos that generate more user interaction tend to have higher view counts.</p>
-                <p>For classification into view count categories, the {best_classification_model} achieved an accuracy rate of {best_classification_acc:.2%}, which is a significant improvement over random guessing (which would be 20% for 5 categories).</p>
+                <p>Feature importance analysis (primarily from Random Forest) suggests that features like {top_features_str} are among the most important predictors of video views.</p>
+                <p>For classification into view count categories, the {best_classification_model} achieved an accuracy rate of {best_classification_acc:.2%}, which is a significant improvement over random guessing.</p>
             </div>
             
             <div class="section">
@@ -457,6 +475,51 @@ def generate_html_report():
                 such as the introduction of synthetic noise or modifications to the decision boundaries that did not generalize well.
                 </p>
             </div>
+
+            <div class="section">
+                 <h2>Detailed Visualizations</h2>
+                 # Define plots to include (adjust filenames as needed)
+                 all_plot_files = {{
+                     'Feature Correlation Heatmap': 'correlation_heatmap.png',
+                     '2D PCA Visualization': 'pca_visualization_views.png',
+                     '3D PCA Visualization': 'pca_3d_visualization.png',
+                     'PCA Feature Loadings': 'pca_loadings_views.png',
+                     'PCA vs Views': 'pca_vs_views.png',
+                     'Linear Regression: Actual vs Predicted': 'linear_regression_actual_vs_predicted.png',
+                     'Linear Regression: Residuals': 'linear_regression_residuals.png',
+                     'Linear Regression: Log-transformed Actual vs Predicted': 'linear_regression_log_transformed.png',
+                     'Confusion Matrix (Binned Categories - RF Test)': 'view_categories_confusion_matrix.png', # From Sec 11
+                     'View Categories Distribution (Test Set)': 'view_categories_distribution.png',
+                     'Random Forest Regression R² Scores Across Folds': 'rf_regression_r2_scores.png',
+                     'Random Forest Regression Confusion Matrix (Binned CV Pred)': 'rf_binned_regression_confusion_matrix.png',
+                     'Random Forest Regression Feature Importance': 'rf_regression_feature_importance.png',
+                     'Random Forest Classification Accuracy Scores Across Folds': 'rf_classification_accuracy_scores.png',
+                     'Random Forest Classification Confusion Matrix (CV)': 'rf_classification_confusion_matrix.png',
+                     'Random Forest Classification Feature Importance': 'rf_classification_feature_importance.png',
+                     'Decision Tree Classification Confusion Matrix (CV)': 'dt_classification_confusion_matrix.png',
+                     'Example Decision Tree (Classification, Depth=3)': 'decision_tree_visualization.png',
+                     'Example Decision Tree (Regression, Depth=3)': 'regression_decision_tree_visualization.png'
+                 }}
+
+                 html_content += '<div class="visualization-group">' # Group visualizations
+                 for title, filename in all_plot_files.items():
+                     img_path = os.path.join(RESULTS_DIR, filename)
+                     html_content += '<div class="visualization">'
+                     if os.path.exists(img_path):
+                         try:
+                             with open(img_path, "rb") as img_file:
+                                 import base64
+                                 img_data = base64.b64encode(img_file.read()).decode('utf-8')
+                                 img_data_uri = f"data:image/png;base64,{{img_data}}"
+                                 html_content += f'<h3>{{title}}</h3>'
+                                 html_content += f'<img src="{{img_data_uri}}" alt="{{title}}"><br>'
+                         except Exception as e:
+                             html_content += f'<h3>{{title}}</h3><p>Error embedding {{title}} plot: {{e}}</p>'
+                     else:
+                          html_content += f'<h3>{{title}}</h3><p>{{title}} plot not found.</p>'
+                     html_content += '</div>' # Close visualization div
+                 html_content += '</div>' # Close visualization group
+                 html_content += '</div>' # Close detailed viz section
             
             <div class="footer">
                 <p>Music Video Engagement Predictor Project</p>

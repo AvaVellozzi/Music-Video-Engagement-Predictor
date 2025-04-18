@@ -995,9 +995,74 @@ print(classification_report(y_binned, y_pred_cv_dt_smote, target_names=target_na
 print("\n--- SMOTE Evaluation Complete ---")
 
 # ==============================================================================
-# Section 17: Save Metrics for Reporting
+# Section 17: Model Comparison Visualization (Regression R²)
 # ==============================================================================
-print("\n--- 17: Saving Metrics for Reporting ---")
+print("\n--- 17: Generating Comparison Plot for Regression Models (R²) ---")
+
+# Data for the plot
+model_names = ['Random Forest', 'Decision Tree']
+r2_means = [r2_cv, r2_cv_dt] # Mean R² from Sections 12 and 15
+r2_stds = [r2_cv_std, r2_cv_dt_std] # Standard deviations from Sections 12 and 15
+
+plt.figure(figsize=(8, 6))
+x_pos = np.arange(len(model_names))
+
+# Create grouped bar chart
+plt.bar(x_pos, r2_means, yerr=r2_stds, capsize=10, color=['royalblue', 'forestgreen'], alpha=0.8)
+
+plt.ylabel('Mean Cross-Validated R² Score')
+plt.title('Comparison of Cross-Validated R² Scores (Regression Models)')
+plt.xticks(x_pos, model_names)
+plt.ylim(min(0, min(r2_means) - max(r2_stds) - 0.1), max(r2_means) + max(r2_stds) + 0.1) # Adjust y-limits
+plt.grid(axis='y', linestyle='--', alpha=0.7)
+
+# Add text labels for mean values
+for i, v in enumerate(r2_means):
+    plt.text(i, v + r2_stds[i] + 0.01, f"{v:.3f}", ha='center', va='bottom')
+
+plt.tight_layout()
+comparison_plot_file = os.path.join(RESULTS_DIR, 'regression_model_r2_comparison.png')
+plt.savefig(comparison_plot_file)
+print(f"Regression model R² comparison plot saved to {comparison_plot_file}")
+
+# ==============================================================================
+# Section 18: Model Comparison Visualization (Classification Accuracy)
+# ==============================================================================
+print("\n--- 18: Generating Comparison Plot for Classification Models (Accuracy) ---")
+
+# Data for the plot (using results without SMOTE for primary comparison)
+clf_model_names = ['Random Forest', 'Decision Tree']
+# Mean CV Accuracy from Sections 14 and 15
+accuracy_means = [accuracy_mean, accuracy_mean_dt] 
+# Std Dev CV Accuracy from Sections 14 and 15
+accuracy_stds = [accuracy_std, accuracy_std_dt] 
+
+plt.figure(figsize=(8, 6))
+x_pos = np.arange(len(clf_model_names))
+
+# Create grouped bar chart
+plt.bar(x_pos, accuracy_means, yerr=accuracy_stds, capsize=10, color=['darkorange', 'purple'], alpha=0.8)
+
+plt.ylabel('Mean Cross-Validated Accuracy')
+plt.title('Comparison of Cross-Validated Accuracy (Classification Models)')
+plt.xticks(x_pos, clf_model_names)
+plt.ylim(min(0, min(accuracy_means) - max(accuracy_stds) - 0.1), max(1.0, max(accuracy_means) + max(accuracy_stds) + 0.1)) # Ensure y-limit includes 0 and 1
+plt.grid(axis='y', linestyle='--', alpha=0.7)
+
+# Add text labels for mean values
+for i, v in enumerate(accuracy_means):
+    plt.text(i, v + accuracy_stds[i] + 0.01, f"{v:.3f}", ha='center', va='bottom')
+
+plt.tight_layout()
+clf_comparison_plot_file = os.path.join(RESULTS_DIR, 'classification_model_accuracy_comparison.png')
+plt.savefig(clf_comparison_plot_file)
+print(f"Classification model accuracy comparison plot saved to {clf_comparison_plot_file}")
+
+
+# ==============================================================================
+# Section 19: Save Metrics for Reporting
+# ==============================================================================
+print("\n--- 19: Saving Metrics for Reporting ---")
 
 import json
 
@@ -1077,9 +1142,9 @@ print("\nYou can now generate an HTML report by running:")
 print("python generate_report.py")
 
 # ==============================================================================
-# Section 18: Visualizing a Decision Tree (Example)
+# Section 20: Visualizing a Decision Tree (Example)
 # ==============================================================================
-print("\n--- 18: Visualizing a Shallow Decision Tree (Example) ---")
+print("\n--- 20: Visualizing a Shallow Decision Tree (Example) ---")
 
 # Create a decision tree classifier with limited depth for visualization
 # Note: This uses the train/test split data without scaling for simplicity of visualization

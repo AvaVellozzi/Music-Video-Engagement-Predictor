@@ -1,26 +1,26 @@
 {
     "Linear Regression (Train/Test Split)": {
-        "Test R\u00b2": 0.30004994612132274,
-        "Test RMSE": 114695397.6272889,
-        "Test MAE": 62820705.192124434,
-        "Classification Accuracy (Binned Test Pred)": 0.4903301012027765
+        "Test R\u00b2": 0.30156667915111235,
+        "Test RMSE": 114571062.58391613,
+        "Test MAE": 62165032.213827394,
+        "Classification Accuracy (Binned Test Pred - using RF)": 0.5901986754966887
     },
     "Random Forest Regression (Cross-validated)": {
         "Cross-validated R\u00b2": 0.47796867747587085,
         "Cross-validated R\u00b2 Std": 0.014328306977575766,
         "Cross-validated RMSE": 100841432.84072776,
         "Cross-validated MAE": 53425906.90042471,
-        "Classification Accuracy (Binned CV Pred)": 0.4903301012027765
+        "Classification Accuracy (Derived from Binned CV Reg Pred)": 0.4903301012027765
     },
     "Random Forest Classification (Cross-validated)": {
         "Cross-validated Accuracy": 0.5917444347346957,
         "Cross-validated Accuracy Std": 0.008902788967093395,
-        "Cross-validated Precision": 0.5983598015861793,
+        "Cross-validated Precision (Weighted)": 0.5983598015861793,
         "Cross-validated Precision Std": 0.007488002167950863,
-        "Cross-validated Recall": 0.5917444347346957,
+        "Cross-validated Recall (Weighted)": 0.5917444347346957,
         "Cross-validated Recall Std": 0.008902788967093395,
-        "Cross-validated F1 Score": 0.5858132589234614,
-        "Cross-validated F1 Score Std": 0.008689998337559962
+        "Cross-validated F1 (Weighted)": 0.5858132589234614,
+        "Cross-validated F1 Std": 0.008689998337559962
     },
     "Decision Tree Regression (Cross-validated)": {
         "Cross-validated R\u00b2": -0.05093476520869198,
@@ -31,31 +31,31 @@
     "Decision Tree Classification (Cross-validated)": {
         "Cross-validated Accuracy": 0.47459393479962236,
         "Cross-validated Accuracy Std": 0.00840062901205784,
-        "Cross-validated Precision": 0.47531015162182816,
+        "Cross-validated Precision (Weighted)": 0.47531015162182816,
         "Cross-validated Precision Std": 0.008811017689109555,
-        "Cross-validated Recall": 0.47459393479962236,
+        "Cross-validated Recall (Weighted)": 0.47459393479962236,
         "Cross-validated Recall Std": 0.00840062901205784,
-        "Cross-validated F1 Score": 0.4748015453853873,
-        "Cross-validated F1 Score Std": 0.008672171342992032
+        "Cross-validated F1 (Weighted)": 0.4748015453853873,
+        "Cross-validated F1 Std": 0.008672171342992032
     },
     "Random Forest Classification (SMOTE, CV)": {
         "Cross-validated Accuracy": 0.5693314241393711,
         "Cross-validated Accuracy Std": 0.0075664649445438435,
-        "Cross-validated Precision": 0.5668502710316901,
+        "Cross-validated Precision (Weighted)": 0.5668502710316901,
         "Cross-validated Precision Std": 0.007765644788846479,
-        "Cross-validated Recall": 0.5693314241393711,
+        "Cross-validated Recall (Weighted)": 0.5693314241393711,
         "Cross-validated Recall Std": 0.0075664649445438435,
-        "Cross-validated F1 Score": 0.5674702644182258,
-        "Cross-validated F1 Score Std": 0.007601853001039116
+        "Cross-validated F1 (Weighted)": 0.5674702644182258,
+        "Cross-validated F1 Std": 0.007601853001039116
     },
     "Decision Tree Classification (SMOTE, CV)": {
         "Cross-validated Accuracy": 0.46219489922333706,
         "Cross-validated Accuracy Std": 0.008245310493333888,
-        "Cross-validated Precision": 0.4668978610203787,
+        "Cross-validated Precision (Weighted)": 0.4668978610203787,
         "Cross-validated Precision Std": 0.009286390294364249,
-        "Cross-validated Recall": 0.46219489922333706,
+        "Cross-validated Recall (Weighted)": 0.46219489922333706,
         "Cross-validated Recall Std": 0.008245310493333888,
-        "Cross-validated F1 Score": 0.4625161326983897,
-        "Cross-validated F1 Score Std": 0.008368809347242897
+        "Cross-validated F1 (Weighted)": 0.4625161326983897,
+        "Cross-validated F1 Std": 0.008368809347242897
     }
 }
