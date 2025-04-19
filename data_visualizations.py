@@ -74,3 +74,20 @@ plt.savefig(os.path.join(VISUAL_DIR, "pairplot_subset.png"))
 plt.close()
 
 print(f"All visualizations saved to the '{VISUAL_DIR}' folder.")
+
+
+# --- Histogram of views ---
+plt.figure(figsize=(10, 6))
+
+# Use regular binning
+num_bins = 50
+plt.hist(df['Views'], bins=num_bins, alpha=0.7, linewidth=0.5)
+
+# Add labels and title
+plt.title('Distribution of YouTube video Views', fontsize=16)
+plt.xlabel('Views', fontsize=12)
+plt.ylabel('Videos', fontsize=12)
+
+plt.tight_layout()
+plt.savefig(os.path.join(VISUAL_DIR, "views_distribution.png"))
+plt.close()
