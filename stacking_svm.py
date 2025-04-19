@@ -109,7 +109,10 @@ def stacking_classification(X_train, y_train, X_test, y_test):
 	
     y_train_binned = np.array([categorize_views(v) for v in y_train])  # Use y_train for binning
     y_test_binned = np.array([categorize_views(v) for v in y_test])  # Use y_test for binning
-    clf.fit(X_train, y_train_binned).score(X_test, y_test_binned)
+    clf.fit(X_train, y_train_binned)
+    y_pred = clf.predict(X_test)
+    print(classification_report(y_test_binned, y_pred, labels=[0, 1]))
+
 
 
 def stacking_regressor(X_train, y_train, X_test, y_test):
@@ -120,7 +123,12 @@ def stacking_regressor(X_train, y_train, X_test, y_test):
     ]
     print("Stacking Regressor")
     clf = StackingRegressor(estimators=estimators, final_estimator=svm.SVR(kernel='rbf'))
-    clf.fit(X_train, y_train).score(X_test, y_test)
+    clf.fit(X_train, y_train)
+    
+	# Make predictions on test data
+    y_pred = clf.predict(X_test)
+    print(classification_report(y_test, y_pred, labels=[0, 1]))
+
 
 
 # Load preprocessed data
