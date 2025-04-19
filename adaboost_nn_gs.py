@@ -133,7 +133,7 @@ y_pred_gs_svm = clf.predict(X_test)
 print("Best parameters for Grid Search with SVM:", clf.best_params_)
 
 accuracy = accuracy_score(y_test_svm, y_pred_gs_svm)
-print(" GridSearch KNNRegressor Accuracy: ", accuracy)
+print(" GridSearch SVM Accuracy: ", accuracy)
 
 print(classification_report(y_test_svm, y_pred_gs_svm, labels=[0, 1]))
 
@@ -143,4 +143,13 @@ disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=[0, 1])
 disp.plot(cmap=plt.cm.Blues) 
 plt.title("Confusion Matrix")
 plt.savefig(os.path.join(results_dir, 'gridsearch_svm_confmatrix.png'))
+plt.close()
+
+# Histogram of views after being binned
+plt.hist(y_train_binned)
+plt.xlabel('Classes')
+plt.ylabel('Frequency')
+plt.title('View Counts for Each Class')
+plt.savefig(os.path.join(results_dir, 'views_binned_histogram.png'))
+# Display the plot
 plt.close()
