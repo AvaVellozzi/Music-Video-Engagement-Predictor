@@ -34,17 +34,9 @@ def categorize_views(views):
     else:  # 100M - 1B (since we removed >1B)
         return 3
 
-
-def categorize_views_svm(views):
-    """Categorize views into 2 groups for binary SVM Classification """
-    if views < 10000000:  # Less than 10M
-        return 0
-    else:
-        return 1
-
 def svm_classification(X_train, y_train, X_test, y_test):
     
-	y_train_svm = np.array([categorize_views_svm(v) for v in y_train])
+	y_train_svm = np.array([categorize_views(v) for v in y_train])
     
 	print("linear")
     # linear SVC
@@ -75,28 +67,28 @@ def svm_classification(X_train, y_train, X_test, y_test):
 
     
 def check_accuracy(y_test, lin_pred, rbf_pred, poly_pred, sig_pred):
-	y_test_svm = np.array([categorize_views_svm(v) for v in y_test])
+	y_test_svm = np.array([categorize_views(v) for v in y_test])
 	# Print classification report for each SVC
 	
 	# linear SVC
 	lin_accuracy = accuracy_score(y_test_svm, lin_pred)
 	print(" Linear SVM acccuracy ", lin_accuracy)
-	print(classification_report(y_test_svm, lin_accuracy, labels=[0, 1]))
+	print(classification_report(y_test_svm, lin_accuracy, labels=[0, 1, 2, 3]))
     
 	# RBF SVC
 	rbf_accuracy = accuracy_score(y_test_svm, rbf_pred)
 	print(" RBF SVM acccuracy ", rbf_accuracy)
-	print(classification_report(y_test_svm, rbf_accuracy, labels=[0, 1]))
+	print(classification_report(y_test_svm, rbf_accuracy, labels=[0, 1, 2, 3]))
 
 	# Polynomial SVC
 	poly_accuracy = accuracy_score(y_test_svm, poly_pred)
 	print(" Polynomial SVM acccuracy ", poly_accuracy)
-	print(classification_report(y_test_svm, poly_accuracy, labels=[0, 1]))
+	print(classification_report(y_test_svm, poly_accuracy, labels=[0, 1, 2, 3]))
      
 	# Sigmoid SVC
 	sig_accuracy = accuracy_score(y_test_svm, sig_pred)
 	print(" Sigmoid SVM acccuracy ", sig_accuracy)
-	print(classification_report(y_test_svm, sig_accuracy, labels=[0, 1]))
+	print(classification_report(y_test_svm, sig_accuracy, labels=[0, 1, 2, 3]))
 
 def stacking_classification(X_train, y_train, X_test, y_test):
     estimators = [
@@ -111,7 +103,7 @@ def stacking_classification(X_train, y_train, X_test, y_test):
     y_test_binned = np.array([categorize_views(v) for v in y_test])  # Use y_test for binning
     clf.fit(X_train, y_train_binned)
     y_pred = clf.predict(X_test)
-    print(classification_report(y_test_binned, y_pred, labels=[0, 1]))
+    print(classification_report(y_test_binned, y_pred, target_names=['0', '1', '2', '3']))
 
 
 
@@ -133,5 +125,4 @@ def stacking_regressor(X_train, y_train, X_test, y_test):
 
 # Load preprocessed data
 X_train, X_test, y_train, y_test, feature_names = load_data()
-stacking_regressor(X_train, y_train, X_test, y_test)
 svm_classification(X_train, y_train, X_test, y_test)
